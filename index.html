@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GoT Legends Ultra Focus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800;900&display=swap');
+        body { 
+            font-family: 'Prompt', sans-serif; 
+            background-color: #DBD8C9; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        #app { 
+            width: 100%; 
+            max-width: 550px; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            background-color: #F4F4F5; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.15); 
+            position: relative;
+        }
+        .header { 
+            background: #111827; 
+            color: white; 
+            padding: 10px 16px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div class="header">
+        <div class="flex flex-col">
+            <div class="font-black text-[13px] md:text-sm flex items-center gap-1.5 tracking-wide text-white">
+                <i class="fa-solid fa-ghost text-red-500"></i> Ghost of Yotei Legends
+            </div>
+            <div class="text-[9px] md:text-[10px] font-medium text-gray-400 tracking-widest uppercase ml-5">
+                : Nightmare Survival Mode
+            </div>
+        </div>
+        <div class="flex gap-2 items-center">
+            <button onclick="openQRModal()" class="text-[10px] bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-indigo-500/30"><i class="fa-solid fa-qrcode"></i></button>
+            <button onclick="openLogin()" id="btn-login" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"><i class="fa-solid fa-lock"></i></button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#F4F4F5] flex flex-col items-center justify-center transition-opacity duration-300">
+        <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-3"></i>
+        <p id="loading-text" class="text-xs font-bold text-gray-500 tracking-wider text-center mt-2">CONNECTING...<br/><span class="text-[10px] font-normal">กำลังเชื่อมต่อข้อมูล</span></p>
+    </div>
+
+    <!-- Popup แจ้งเตือนสัปดาห์ใหม่ -->
+    <div id="update-notice" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl shadow-2xl z-40 w-[90%] max-w-sm flex items-start gap-3 transition-opacity duration-500">
+        <i class="fa-solid fa-bell-concierge text-yellow-500 text-xl mt-0.5 animate-bounce"></i>
+        <div>
+            <p class="font-black text-sm text-yellow-800 tracking-wide" id="notice-title">New Week Reset! (รีเซ็ตสัปดาห์ใหม่แล้ว!)</p>
+            <p class="text-[11px] mt-0.5 text-yellow-700 font-medium" id="notice-desc">Please wait for the Admin to update the spawn data.<br/>(โปรดรอแอดมินอัปเดตข้อมูลด่านและจุดเกิดสักครู่นะครับ)</p>
+        </div>
+    </div>
+
+    <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
+        
+        <div class="bg-white rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 gap-1">
+            <div class="flex-1 flex items-center bg-gray-50 rounded-xl px-2 relative w-full">
+                <i class="fa-solid fa-location-dot text-gray-400 mr-2 text-sm"></i>
+                <select id="map-select" onchange="changeMap(this.value)" class="w-full py-2 font-black text-sm text-gray-800 bg-transparent outline-none cursor-pointer appearance-none">
+                    <!-- โหลดจาก JS -->
+                </select>
+                <i id="chevron-map" class="fa-solid fa-caret-down text-gray-400 absolute right-3 pointer-events-none hidden"></i>
+            </div>
+            
+            <div id="date-display" class="px-3 py-2 text-xs font-black text-red-500 tracking-wider text-center w-full md:w-auto bg-red-50 rounded-xl border border-red-100">
+                <!-- โหลดจาก JS -->
+            </div>
+        </div>
+
+        <div id="legend-container" class="grid grid-cols-3 gap-1.5 md:gap-2 w-full py-0.5">
+            <!-- โหลดจาก JS -->
+        </div>
+
+        <div id="waves-container" class="flex flex-col gap-2.5 pb-2">
+            <!-- โหลดจาก JS -->
+        </div>
+
+        <!-- Credit Footer -->
+        <div class="text-center mt-2 mb-4">
+            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Developed by ZeroEchoTH (PSN)</span>
+        </div>
+    </div>
+
+    <!-- Admin Bar -->
+    <div id="admin-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 p-2.5 flex justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
+        <button id="btn-clear" onclick="clearData()" class="text-red-500 bg-red-50 hover:bg-red-100 font-bold text-[11px] px-3 py-2 rounded-xl transition flex flex-col items-center leading-none"><i class="fa-solid fa-trash-can mb-1"></i> Clear (ล้าง)</button>
+        <div class="flex gap-2">
+            <button id="btn-save" onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-cloud-arrow-up mb-1"></i> Save (บันทึก)</button>
+            <button id="btn-exit" onclick="exitAdmin()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-xmark mb-1"></i> Exit (ปิด)</button>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600"></i></button>
+            
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 bg-indigo-50 border border-indigo-100">
+                <i class="fa-solid fa-share-nodes text-indigo-500 text-xl"></i>
+            </div>
+            
+            <h3 class="font-black mb-1 text-lg text-gray-800">Share App</h3>
+            <p class="text-[11px] text-gray-500 mb-5 font-medium">สแกนเพื่อเข้าใช้งานแอปพลิเคชัน</p>
+            
+            <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-gray-200 mb-5 inline-block">
+                <canvas id="qr-canvas" class="rounded-lg"></canvas>
+            </div>
+            
+            <button onclick="downloadQR()" class="w-full bg-indigo-600 text-white hover:bg-indigo-700 p-3.5 rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
+                <i class="fa-solid fa-download"></i> Save QR Code
+            </button>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl">
+            <h3 class="font-black mb-1 text-lg text-gray-800">Admin Login</h3>
+            <p class="text-xs text-gray-500 mb-4">เข้าสู่ระบบแอดมิน</p>
+            <input type="password" id="pass-field" class="w-full border border-gray-200 p-3 rounded-xl text-center text-xl tracking-[0.3em] mb-4 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50" placeholder="•••••">
+            <div class="flex gap-2">
+                <button onclick="closeLogin()" class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
+                <button id="btn-confirm-login" onclick="doLogin()" class="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Confirm<br/><span class="text-[10px] font-normal">ยืนยัน</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Confirm/Alert Modal -->
+    <div id="dynamic-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden">
+            <div id="modal-icon-bg" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100">
+                <i id="modal-icon" class="fa-solid fa-triangle-exclamation text-yellow-500 text-3xl"></i>
+            </div>
+            <h3 class="font-black mb-2 text-lg text-gray-800" id="dynamic-title">Title</h3>
+            <p class="text-xs text-gray-500 mb-6 leading-relaxed px-2 font-medium" id="dynamic-desc">Desc</p>
+            <div class="flex gap-2" id="dynamic-buttons">
+                <!-- โหลดปุ่มผ่าน JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal (เพิ่ม Scroll หากจอมือถือเล็ก) -->
+    <div id="edit-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
+        <div class="bg-white w-full p-5 rounded-t-3xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2 border-b border-gray-100">
+                <h3 id="modal-title" class="font-black text-lg text-gray-800">Edit Wave</h3>
+                <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600"></i></button>
+            </div>
+            <div id="modal-body" class="flex flex-col gap-4 mb-5"></div>
+            <button onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg transition flex flex-col items-center sticky bottom-0">
+                <span class="text-sm">Update Wave</span>
+                <span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-sm font-bold z-50 shadow-xl flex items-center gap-2 text-center">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <div>
+            Saved! <span class="text-xs font-normal text-gray-300 ml-1">(บันทึกสำเร็จ)</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const mapIcons = {
+        "hidden_temple": { "Cemetery": "🪦", "Pagoda": "🏯", "Courtyard": "⛩️" },
+        "river_village": { "RicePaddies": "🌾", "Beach": "⛵", "Village": "🛖" },
+        "frozen_valley": { "Hillside": "⛰️", "Waterfalls": "🌊", "Armory": "⚔️" },
+        "broken_castle": { "Foundry": "⚒️", "Keep": "🏰", "Burnt Garden": "🌸" }
+    };
+
+    // 🌟 กำหนดค่าสีสำหรับด่าน Hidden Temple
+    const auraColors = [
+        { id: 'orange', hexClass: 'bg-orange-500', shadowClass: 'shadow-orange-200' },
+        { id: 'blue', hexClass: 'bg-blue-500', shadowClass: 'shadow-blue-200' },
+        { id: 'green', hexClass: 'bg-green-500', shadowClass: 'shadow-green-200' }
+    ];
+
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjM2qJCu592lrH9MzqYQVmTsb6QYRVIjigQVr9uPut_joYHCi2urO4ODrNRLAuwX_i/exec";
+
+    async function apiCall(action, ...args) {
+        try {
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, args })
+            });
+            return await res.json();
+        } catch (e) {
+            console.error('API Error:', e);
+            throw e;
+        }
+    }
+
+    let gData = {};
+    let curM = 'hidden_temple', isAdmin = false;
+    let mapDate = "", adminPass = "";
+    let editingW = null, editingS = null, tempPts = [];
+    let activeWave = null;
+    let hasUnsavedChanges = false;
+    let originalSpawnDataString = ""; 
+    let originalMapId = ""; 
+    let qrCreated = false;
+    
+    window.onload = async () => {
+        try {
+            const res = await apiCall('getWeeklyMapData');
+            if(!res.success) { 
+                document.getElementById('loading-text').innerHTML = "Error: " + res.error; 
+                return; 
+            }
+            gData = res;
+            curM = res.currentMapId || 'hidden_temple';
+            originalMapId = curM; 
+            mapDate = res.mapDate || "";
+            document.getElementById('loading-overlay').classList.add('hidden');
+            render();
+
+            if (gData.isNewWeek) {
+                showUpdateNotice();
+            }
+        } catch(err) {
+            document.getElementById('loading-text').innerHTML = "Error: " + err.toString(); 
+        }
+    };
+
+    function openQRModal() {
+        document.getElementById('qr-modal').classList.remove('hidden');
+        if (!qrCreated) {
+            new QRious({
+                element: document.getElementById('qr-canvas'),
+                value: WEB_APP_URL,
+                size: 200,
+                level: 'H'
+            });
+            qrCreated = true;
+        }
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-modal').classList.add('hidden');
+    }
+
+    function downloadQR() {
+        const canvas = document.getElementById('qr-canvas');
+        const link = document.createElement('a');
+        link.download = 'GoT-Legends-App-QR.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    function showModal(type, title, desc, onConfirmCallback) {
+        document.getElementById('dynamic-title').innerHTML = title;
+        document.getElementById('dynamic-desc').innerHTML = desc;
+        
+        const btnContainer = document.getElementById('dynamic-buttons');
+        const iconBg = document.getElementById('modal-icon-bg');
+        const icon = document.getElementById('modal-icon');
+
+        if(type === 'error') {
+            iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-red-100";
+            icon.className = "fa-solid fa-circle-xmark text-red-500 text-3xl";
+            btnContainer.innerHTML = `
+                <button onclick="closeDynamicModal()" class="flex-1 bg-red-600 text-white hover:bg-red-700 p-3 rounded-xl font-bold transition text-sm flex flex-col items-center leading-none">OK <span class="font-normal text-[10px] mt-1">(ตกลง)</span></button>
+            `;
+        } else if (type === 'warning' || type === 'confirm') {
+            iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100";
+            icon.className = "fa-solid fa-triangle-exclamation text-yellow-500 text-3xl";
+            btnContainer.innerHTML = `
+                <button onclick="closeDynamicModal()" class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
+                <button id="btn-dynamic-confirm" class="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Confirm<br/><span class="text-[10px] font-normal">ยืนยัน</span></button>
+            `;
+            document.getElementById('btn-dynamic-confirm').onclick = () => {
+                closeDynamicModal();
+                if(onConfirmCallback) onConfirmCallback();
+            };
+        }
+        document.getElementById('dynamic-modal').classList.remove('hidden');
+    }
+
+    function closeDynamicModal() {
+        document.getElementById('dynamic-modal').classList.add('hidden');
+    }
+
+    function showUpdateNotice() {
+        const notice = document.getElementById('update-notice');
+        notice.classList.remove('hidden');
+        setTimeout(() => {
+            notice.classList.add('hidden');
+        }, 5000);
+    }
+    
+    function changeMap(v) { 
+        curM = v; 
+        activeWave = null; 
+        
+        [1,2,3,4].forEach(w => {
+            [1,2,3].forEach(s => {
+                if(!gData.spawnData[w]) gData.spawnData[w] = {};
+                gData.spawnData[w][s] = [];
+            });
+        });
+        
+        if (isAdmin) hasUnsavedChanges = true;
+        render(); 
+    }
+
+    function highlightWave(w) {
+        if (isAdmin) return; 
+        activeWave = (activeWave === w) ? null : w;
+        render();
+    }
+
+    function openLogin() { 
+        activeWave = null; 
+        if(isAdmin) { 
+            exitAdmin(); 
+        } else { 
+            document.getElementById('login-modal').classList.remove('hidden'); 
+            setTimeout(() => document.getElementById('pass-field').focus(), 100); 
+        } 
+    }
+
+    function exitAdmin() {
+        if (hasUnsavedChanges) {
+            showModal(
+                'warning',
+                'Unsaved Changes<br/><span class="text-sm font-normal text-gray-500">(ยังไม่ได้บันทึก)</span>',
+                'You have unsaved changes.<br/>Are you sure you want to exit without saving?<br/><br/><span class="text-[10px] text-gray-400">(คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ต้องการออกโดยไม่บันทึกใช่ไหม?)</span>',
+                () => {
+                    gData.spawnData = JSON.parse(originalSpawnDataString);
+                    curM = originalMapId; 
+                    isAdmin = false;
+                    hasUnsavedChanges = false;
+                    adminPass = "";
+                    render();
+                }
+            );
+        } else {
+            isAdmin = false;
+            hasUnsavedChanges = false;
+            adminPass = "";
+            render();
+        }
+    }
+    
+    function closeLogin() { 
+        document.getElementById('login-modal').classList.add('hidden'); 
+        document.getElementById('pass-field').value = '';
+    }
+    
+    async function doLogin() {
+        const p = document.getElementById('pass-field').value;
+        const btn = document.getElementById('btn-confirm-login');
+        const oldText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        
+        try {
+            const ok = await apiCall('checkAdminPassword', p);
+            btn.innerHTML = oldText;
+            if(ok) { 
+                isAdmin = true; 
+                adminPass = p; 
+                hasUnsavedChanges = false;
+                
+                originalSpawnDataString = JSON.stringify(gData.spawnData);
+                originalMapId = curM;
+                
+                closeLogin(); 
+                render(); 
+            } else { 
+                showModal('error', 'Login Failed', 'Incorrect Password!<br/><span class="text-[10px] text-gray-400 mt-1">(รหัสผ่านไม่ถูกต้อง!)</span>');
+            }
+        } catch(err) {
+            btn.innerHTML = oldText;
+            showModal('error', 'Login Failed', 'Error: ' + err.toString());
+        }
+    }
+
+    function openEdit(w, s) {
+        if (!isAdmin) return;
+        editingW = w; 
+        editingS = s;
+        // คัดลอกข้อมูลปัจจุบัน (ซึ่งอาจรวมเรื่องสีไว้ด้วย)
+        tempPts = [...(gData.spawnData[w][s] || [])];
+        renderEditModal();
+        document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    function renderEditModal() {
+        document.getElementById('modal-title').innerHTML = `Edit Wave <span class="text-sm font-medium text-gray-500">(แก้ไขเวฟ)</span> ${editingW}.${editingS}`;
+        const body = document.getElementById('modal-body');
+        body.innerHTML = "";
+        const limit = (editingW === 4) ? 4 : 3;
+        
+        for(let i=0; i<limit; i++) {
+            // 🌟 แยกข้อมูล ตำแหน่ง (loc) กับ สี (colors) ออกจากกัน
+            let currentRaw = tempPts[i] || "";
+            let currentLoc = currentRaw.includes(':') ? currentRaw.split(':')[0] : currentRaw;
+            let currentColors = currentRaw.includes(':') ? currentRaw.split(':')[1].split(',') : [];
+
+            const row = document.createElement('div');
+            row.className = "bg-gray-50/50 p-2 rounded-2xl border border-gray-100";
+            
+            // 1. ส่วนเลือกสถานที่
+            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide px-1">Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></div>`;
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-3 gap-2";
+            
+            Object.keys(mapIcons[curM]).forEach(enName => {
+                const btn = document.createElement('button');
+                const isSel = (currentLoc === enName);
+                
+                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white shadow-sm transform scale-[1.03]' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100'}`;
+                
+                let thName = enName;
+                const pointInfo = gData.mapsData[curM].points.find(p => p.id === enName);
+                if (pointInfo) thName = pointInfo.name.th;
+                
+                btn.innerHTML = `
+                    <span class="text-2xl ${isSel?'':'opacity-60'} leading-none mb-1">${mapIcons[curM][enName]}</span>
+                    <span class="text-[10px] font-bold ${isSel?'text-indigo-700':'text-gray-700'} leading-tight">${enName}</span>
+                    <span class="text-[9px] font-normal ${isSel?'text-indigo-500':'text-gray-400'} leading-tight">${thName}</span>
+                `;
+                
+                btn.onclick = () => { 
+                    if (isSel) {
+                        tempPts[i] = ""; // ถ้ายกเลิก ก็เคลียร์ทั้งสีและตำแหน่ง
+                    } else {
+                        tempPts[i] = enName; // ถ้าเลือกใหม่ ก็ล้างสีเก่าทิ้งให้เริ่มเลือกสีใหม่
+                    }
+                    renderEditModal(); 
+                };
+                grid.appendChild(btn);
+            });
+            row.appendChild(grid); 
+
+            // 2. 🌟 ส่วนเลือกสี (เฉพาะด่าน Hidden Temple และเมื่อเลือกสถานที่แล้ว)
+            if (curM === 'hidden_temple' && currentLoc) {
+                const maxColors = (editingW === 4) ? 2 : 1;
+                
+                const colorSection = document.createElement('div');
+                colorSection.className = "mt-3 pt-2 border-t border-gray-200 flex items-center justify-between px-1";
+                
+                const label = document.createElement('div');
+                label.innerHTML = `<span class="text-[10px] font-bold text-gray-500">Aura Color:</span> <span class="text-[9px] text-gray-400">(Max ${maxColors})</span>`;
+                colorSection.appendChild(label);
+
+                const colorBtns = document.createElement('div');
+                colorBtns.className = "flex gap-2";
+
+                auraColors.forEach(c => {
+                    let isColorSel = currentColors.includes(c.id);
+                    let cBtn = document.createElement('button');
+                    
+                    cBtn.className = `w-7 h-7 rounded-full ${c.hexClass} transition-all border-2 ${isColorSel ? 'border-gray-800 scale-110 shadow-md ' + c.shadowClass : 'border-transparent opacity-60 hover:opacity-100'}`;
+                    
+                    if(isColorSel) {
+                        cBtn.innerHTML = '<i class="fa-solid fa-check text-white text-[10px]"></i>';
+                    }
+
+                    cBtn.onclick = () => {
+                        let newColors = [...currentColors];
+                        if (isColorSel) {
+                            newColors = newColors.filter(x => x !== c.id); // เอาสีออก
+                        } else {
+                            if (newColors.length >= maxColors && maxColors === 1) {
+                                newColors = [c.id]; // แทนที่สีเดิม (W1-3)
+                            } else if (newColors.length < maxColors) {
+                                newColors.push(c.id); // เพิ่มสีใหม่ (W4)
+                            }
+                        }
+                        
+                        let newColorStr = newColors.length > 0 ? ":" + newColors.join(',') : "";
+                        tempPts[i] = currentLoc + newColorStr;
+                        renderEditModal();
+                    };
+                    colorBtns.appendChild(cBtn);
+                });
+                
+                colorSection.appendChild(colorBtns);
+                row.appendChild(colorSection);
+            }
+
+            body.appendChild(row);
+        }
+    }
+
+    function closeEdit() { 
+        document.getElementById('edit-modal').classList.add('hidden'); 
+        editingW = null;
+        editingS = null;
+    }
+    
+    function confirmEdit() { 
+        const cleanedPts = tempPts.map(x => x ? x : "");
+        if(JSON.stringify(gData.spawnData[editingW][editingS]) !== JSON.stringify(cleanedPts)) {
+            hasUnsavedChanges = true;
+        }
+        gData.spawnData[editingW][editingS] = cleanedPts; 
+        closeEdit(); 
+        render(); 
+    }
+
+    function clearData() { 
+        showModal(
+            'warning',
+            'Clear Data?<br/><span class="text-sm font-normal text-gray-500">(ล้างข้อมูล?)</span>',
+            'Are you sure you want to clear all spawn data?<br/><br/><span class="text-[10px] text-gray-400">(คุณแน่ใจหรือไม่ที่จะล้างข้อมูลจุดเกิดทั้งหมด?)</span>',
+            () => {
+                [1,2,3,4].forEach(w => [1,2,3].forEach(s => gData.spawnData[w][s] = [])); 
+                hasUnsavedChanges = true; 
+                render(); 
+            }
+        );
+    }
+
+    function saveData() {
+        if (!gData.isNewWeek && curM !== gData.currentMapId) {
+            showModal(
+                'warning',
+                'Overwrite Map?<br/><span class="text-sm font-normal text-gray-500">(บันทึกทับด่านเดิม?)</span>',
+                'Data for this week already exists. Are you sure you want to overwrite it with a new map?<br/><br/><span class="text-[10px] text-gray-400">(มีข้อมูลด่านของสัปดาห์นี้อยู่แล้ว ต้องการบันทึกด่านใหม่ทับใช่หรือไม่?)</span>',
+                () => {
+                    executeSave(); 
+                }
+            );
+        } else {
+            executeSave();
+        }
+    }
+
+    async function executeSave() {
+        const btn = document.getElementById('btn-save');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mb-1"></i> Saving...';
+        btn.disabled = true;
+        
+        const mapNameEn = gData.mapsData[curM].name.en; 
+        
+        try {
+            const res = await apiCall('saveWeeklyMapData', curM, mapNameEn, gData.spawnData, adminPass);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            if(res.status === "success") {
+                isAdmin = false; 
+                hasUnsavedChanges = false; 
+                gData.isNewWeek = false; 
+                gData.currentMapId = curM; 
+                originalMapId = curM; 
+                render();
+                
+                const t = document.getElementById('toast');
+                t.classList.remove('hidden');
+                setTimeout(() => t.classList.add('hidden'), 3000);
+            } else {
+                showModal('error', 'Save Failed', 'Error: ' + res.message);
+            }
+        } catch(err) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            showModal('error', 'Save Failed', 'Error: ' + err.toString());
+        }
+    }
+
+    function render() {
+        const mapSel = document.getElementById('map-select');
+        mapSel.innerHTML = '';
+        for(let id in gData.mapsData) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = `${gData.mapsData[id].name.en} (${gData.mapsData[id].name.th})`;
+            if(id === curM) opt.selected = true;
+            mapSel.appendChild(opt);
+        }
+
+        mapSel.disabled = !isAdmin;
+        document.getElementById('chevron-map').classList.toggle('hidden', !isAdmin);
+        document.getElementById('admin-bar').classList.toggle('hidden', !isAdmin);
+        
+        const btnQR = document.querySelector('button[onclick="openQRModal()"]');
+        if(btnQR) btnQR.style.display = isAdmin ? 'none' : 'block';
+
+        document.getElementById('btn-login').innerHTML = isAdmin ? '<i class="fa-solid fa-unlock text-red-400"></i>' : '<i class="fa-solid fa-lock"></i>';
+        document.getElementById('btn-login').className = isAdmin ? 'text-[10px] bg-red-500/20 px-3 py-1.5 rounded-full transition' : 'text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition';
+
+        document.getElementById('date-display').innerHTML = `Week: ${mapDate}`;
+
+        const d = gData.spawnData, i = mapIcons[curM];
+        
+        const leg = document.getElementById('legend-container');
+        leg.innerHTML = '';
+        for (let k in i) {
+            let thName = k;
+            const pointInfo = gData.mapsData[curM].points.find(p => p.id === k);
+            if (pointInfo) thName = pointInfo.name.th;
+            
+            leg.innerHTML += `
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 opacity-90 hover:opacity-100 transition-all hover:shadow-md cursor-default">
+                    <span class="text-[24px] md:text-[28px] drop-shadow-sm leading-none">${i[k]}</span>
+                    <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="text-[9px] md:text-[10px] font-bold text-gray-700 uppercase tracking-widest leading-tight">${k}</span>
+                        <span class="text-[8px] md:text-[9px] font-medium text-gray-400 leading-tight">${thName}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        const con = document.getElementById('waves-container');
+        con.innerHTML = '';
+        const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
+        
+        [1,2,3,4].forEach(w => {
+            const isActive = (activeWave === w);
+            
+            let cardStyle = `bg-white rounded-2xl shadow-sm border-l-[6px] border-${clrs[w]}-400 overflow-hidden relative transition-all duration-300`;
+            if (isActive && !isAdmin) {
+                cardStyle = `bg-${clrs[w]}-50 rounded-2xl shadow-lg border-l-[8px] border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300 transform scale-[1.02] ring-2 ring-${clrs[w]}-200 z-10`;
+            }
+
+            let html = `
+                <div class="${cardStyle}">
+                    <div class="absolute -right-4 -top-8 text-[110px] font-black text-${clrs[w]}-500 opacity-10 pointer-events-none select-none">W${w}</div>
+                    <div class="flex flex-col relative z-10 px-2 py-1">
+            `;
+            
+            [1,2,3].forEach(s => {
+                const limit = w === 4 ? 4 : 3;
+                
+                let rowStyle = 'border-b border-gray-100/60 last:border-0 rounded-xl';
+                if (!isActive || isAdmin) {
+                    rowStyle += ' hover:bg-gray-50'; 
+                }
+                
+                let numClass = 'text-gray-300';
+                if (isActive && !isAdmin) {
+                    numClass = `text-${clrs[w]}-600 scale-110 drop-shadow-sm`;
+                }
+                
+                const onClickAction = isAdmin ? `openEdit(${w}, ${s})` : `highlightWave(${w})`;
+                
+                html += `
+                    <div class="flex items-center py-2.5 transition-all duration-300 cursor-pointer ${rowStyle}" onclick="${onClickAction}">
+                        <div class="w-12 text-center font-black ${numClass} text-sm tracking-widest transition-transform">${w}.${s}</div>
+                        <div class="flex-1 flex justify-evenly items-center">
+                `;
+                
+                for(let idx=0; idx<limit; idx++) {
+                    const rawItem = d[w][s] ? d[w][s][idx] : null;
+                    if (rawItem) {
+                        // 🌟 แยกส่วนประกอบเวลาวาดหน้าจอ
+                        let locName = rawItem.includes(':') ? rawItem.split(':')[0] : rawItem;
+                        let colors = rawItem.includes(':') ? rawItem.split(':')[1].split(',') : [];
+
+                        if (i[locName]) {
+                            let iconClass = '';
+                            if (isAdmin) iconClass += 'hover:scale-110 ';
+                            if (isActive && !isAdmin) iconClass += 'scale-110 drop-shadow-md '; 
+                            
+                            // 🌟 สร้างจุดสีใต้ไอคอน
+                            let colorDotsHtml = '';
+                            if (colors.length > 0) {
+                                colorDotsHtml = `<div class="flex gap-1 mt-1 justify-center">`;
+                                colors.forEach(c => {
+                                    let colorObj = auraColors.find(ac => ac.id === c);
+                                    if(colorObj) {
+                                        colorDotsHtml += `<div class="w-2.5 h-2.5 rounded-full ${colorObj.hexClass} shadow-sm"></div>`;
+                                    }
+                                });
+                                colorDotsHtml += `</div>`;
+                            }
+
+                            html += `
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
+                                    ${colorDotsHtml}
+                                </div>
+                            `;
+                        } else {
+                            html += `<span class="text-sm font-bold text-gray-200 border-2 border-dashed border-gray-200 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
+                        }
+                    } else {
+                        html += `<span class="text-sm font-bold text-gray-200 border-2 border-dashed border-gray-200 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
+                    }
+                }
+                
+                html += `</div></div>`;
+            });
+            con.innerHTML += html + `</div></div>`;
+        });
+    }
+</script>
+</body>
+</html>
