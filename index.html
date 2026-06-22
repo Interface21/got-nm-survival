@@ -8,9 +8,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@400;500;600;700;800&display=swap');
         body { 
-            font-family: 'Prompt', sans-serif; 
+            font-family: 'Noto Sans Thai Looped', sans-serif; 
             background-color: #DBD8C9; 
             margin: 0; 
             display: flex; 
@@ -210,7 +210,13 @@
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action, args })
             });
-            return await res.json();
+            const text = await res.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('API Parse Error. Raw response:', text);
+                throw new Error('Invalid JSON from server');
+            }
         } catch (e) {
             console.error('API Error:', e);
             throw e;
@@ -381,7 +387,8 @@
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
         
         try {
-            const ok = await apiCall('checkAdminPassword', p);
+            const res = await apiCall('checkAdminPassword', p);
+            const ok = res.ok;
             btn.innerHTML = oldText;
             if(ok) { 
                 isAdmin = true; 

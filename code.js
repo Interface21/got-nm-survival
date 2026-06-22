@@ -12,7 +12,7 @@ function doPost(e) {
     if (action === 'getWeeklyMapData') {
       result = getWeeklyMapData();
     } else if (action === 'checkAdminPassword') {
-      result = checkAdminPassword(args[0]);
+      result = { ok: checkAdminPassword(args[0]) };
     } else if (action === 'saveWeeklyMapData') {
       result = saveWeeklyMapData(args[0], args[1], args[2], args[3]);
     } else {
