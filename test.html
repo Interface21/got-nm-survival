@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Testing API</h1>
+    <pre id="output"></pre>
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjM2qJCu592lrH9MzqYQVmTsb6QYRVIjigQVr9uPut_joYHCi2urO4ODrNRLAuwX_i/exec";
+        
+        async function runTest() {
+            try {
+                document.getElementById('output').innerText += "Calling checkAdminPassword...\n";
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'checkAdminPassword', args: [''] })
+                });
+                const text = await res.text();
+                document.getElementById('output').innerText += "Response text: " + text + "\n";
+                
+                try {
+                    const json = JSON.parse(text);
+                    document.getElementById('output').innerText += "JSON parsed: " + JSON.stringify(json) + "\n";
+                } catch(e) {
+                    document.getElementById('output').innerText += "JSON parse failed: " + e.message + "\n";
+                }
+            } catch (e) {
+                document.getElementById('output').innerText += "Fetch error: " + e.message + "\n";
+            }
+        }
+        
+        runTest();
+    </script>
+</body>
+</html>

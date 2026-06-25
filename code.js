@@ -69,6 +69,36 @@ function getCurrentResetDateStr() {
   return d + "/" + m + "/" + y;
 }
 
+// 👥 นับจำนวนผู้เข้าชม
+function getAndIncrementVisitCount(sheet) {
+  let count = 1;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    count = parseInt(props.getProperty('VISIT_COUNT') || '0', 10);
+    
+    if (count === 0 && sheet) {
+      try {
+        const cellVal = parseInt(sheet.getRange("F1").getValue() || 0, 10);
+        if (!isNaN(cellVal) && cellVal > 0) count = cellVal;
+      } catch(e) {}
+    }
+    
+    count++;
+    props.setProperty('VISIT_COUNT', count.toString());
+  } catch(e) {
+    count++;
+  }
+  
+  if (sheet) {
+    try {
+      sheet.getRange("E1").setValue("Total Visits:");
+      sheet.getRange("F1").setValue(count);
+    } catch(e) {}
+  }
+  
+  return count;
+}
+
 // 📥 ดึงข้อมูล
 function getWeeklyMapData() {
   try {
@@ -134,7 +164,8 @@ function getWeeklyMapData() {
     }
 
     // ถ้าไม่ใช่ข้อมูลของสัปดาห์นี้ ระบบจะส่ง spawnData ที่เคลียร์ว่างเปล่ากลับไปให้ (รอให้แอดมินเซฟเป็นข้อมูลใหม่)
-    return { success: true, mapDate, currentMapId: logMapId, spawnData, mapsData, isNewWeek: !isDataMatchCurrentWeek };
+    const visitCount = getAndIncrementVisitCount(sheet);
+    return { success: true, mapDate, currentMapId: logMapId, spawnData, mapsData, isNewWeek: !isDataMatchCurrentWeek, visitCount };
 
   } catch (e) {
     return { success: false, error: e.message };
