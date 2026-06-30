@@ -80,10 +80,28 @@
                 : Nightmare Survival Mode
             </div>
         </div>
-        <div class="flex gap-2 items-center">
-            <button onclick="toggleDarkMode()" id="btn-theme" class="text-[10px] bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-amber-500/30" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
-            <button onclick="openQRModal()" class="text-[10px] bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-indigo-500/30"><i class="fa-solid fa-qrcode"></i></button>
-            <button onclick="openLogin()" id="btn-login" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"><i class="fa-solid fa-gear"></i></button>
+        <div id="header-buttons" class="flex gap-2 items-center relative z-50">
+            <button onclick="toggleVoice()" id="btn-voice" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Toggle Voice Announcement"><i class="fa-solid fa-volume-xmark"></i></button>
+            <button onclick="toggleMenu(event)" id="btn-menu" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-white border border-white/10" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+
+            <!-- Dropdown Menu -->
+            <div id="nav-dropdown" class="hidden absolute right-0 top-9 w-48 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 p-2 z-50 flex flex-col gap-1 text-xs">
+                <button onclick="toggleLang();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-language text-cyan-500 w-4 text-center"></i> Voice Lang</span>
+                    <span id="menu-lang-badge" class="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded-md text-[10px] font-black">TH</span>
+                </button>
+                <button onclick="toggleDarkMode();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                    <span class="flex items-center gap-2"><i id="menu-theme-icon" class="fa-solid fa-moon text-amber-500 w-4 text-center"></i> Theme</span>
+                    <span id="menu-theme-badge" class="text-[10px] text-gray-400 font-medium">Dark</span>
+                </button>
+                <div class="h-px bg-gray-100 dark:bg-slate-700 my-0.5"></div>
+                <button onclick="openQRModal(); closeMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
+                    <i class="fa-solid fa-qrcode text-indigo-500 w-4 text-center"></i> Share QR Code
+                </button>
+                <button onclick="openLogin(); closeMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
+                    <i class="fa-solid fa-gear text-gray-500 dark:text-gray-400 w-4 text-center"></i> Admin Login
+                </button>
+            </div>
         </div>
     </div>
 
@@ -266,9 +284,11 @@
     let curM = 'hidden_temple', isAdmin = false;
     let mapDate = "", adminPass = "";
     let editingW = null, editingS = null, tempPts = [];
-    let activeWave = null;
-    let waveTimerInterval = null;
-    let waveTimeRemaining = 300; // 5 mins in seconds
+    let activeSubW = null, activeSubS = null;
+    let subWaveTimerInterval = null;
+    let subWaveTimeRemaining = 90;
+    let speechLang = localStorage.getItem('got_lang') || 'TH';
+    let voiceEnabled = localStorage.getItem('got_voice') === 'true';
     let hasUnsavedChanges = false;
     let originalSpawnDataString = ""; 
     let originalMapId = ""; 
@@ -282,7 +302,12 @@
                 return; 
             }
             gData = res;
-            curM = res.currentMapId || 'hidden_temple';
+            const savedMap = localStorage.getItem('got_curMap');
+            if (savedMap && gData.mapsData && gData.mapsData[savedMap]) {
+                curM = savedMap;
+            } else {
+                curM = res.currentMapId || 'hidden_temple';
+            }
             originalMapId = curM; 
             mapDate = res.mapDate || "";
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -295,6 +320,25 @@
             document.getElementById('loading-text').innerHTML = "Error: " + err.toString(); 
         }
     };
+
+    function toggleMenu(e) {
+        if (e) e.stopPropagation();
+        const drop = document.getElementById('nav-dropdown');
+        if (drop) drop.classList.toggle('hidden');
+    }
+
+    function closeMenu() {
+        const drop = document.getElementById('nav-dropdown');
+        if (drop) drop.classList.add('hidden');
+    }
+
+    window.addEventListener('click', (e) => {
+        const drop = document.getElementById('nav-dropdown');
+        const btn = document.getElementById('btn-menu');
+        if (drop && !drop.classList.contains('hidden') && !drop.contains(e.target) && (!btn || !btn.contains(e.target))) {
+            closeMenu();
+        }
+    });
 
     function openQRModal() {
         document.getElementById('qr-modal').classList.remove('hidden');
@@ -376,10 +420,11 @@
     }
     
     function changeMap(v) { 
-        if (waveTimerInterval) clearInterval(waveTimerInterval);
-        waveTimerInterval = null;
+        if (subWaveTimerInterval) clearInterval(subWaveTimerInterval);
+        subWaveTimerInterval = null;
         curM = v; 
-        activeWave = null; 
+        localStorage.setItem('got_curMap', curM);
+        activeSubW = null; activeSubS = null;
         
         [1,2,3,4].forEach(w => {
             [1,2,3].forEach(s => {
@@ -392,31 +437,155 @@
         render(); 
     }
 
-    function startWaveTimer(w) {
-        if (waveTimerInterval) clearInterval(waveTimerInterval);
-        activeWave = w;
-        waveTimeRemaining = 300; // 5 minutes in seconds
+    const colorMapTh = {
+        'orange': 'สีส้ม',
+        'blue': 'สีน้ำเงิน',
+        'green': 'สีเขียว',
+        'red': 'สีแดง',
+        'purple': 'สีม่วง',
+        'yellow': 'สีเหลือง',
+        'white': 'สีขาว'
+    };
+
+    function toggleLang() {
+        speechLang = (speechLang === 'TH') ? 'EN' : 'TH';
+        localStorage.setItem('got_lang', speechLang);
+        updateLangButton();
+        if (voiceEnabled && window.speechSynthesis) {
+            let utterance = new SpeechSynthesisUtterance(speechLang === 'TH' ? "ภาษาไทย" : "English");
+            utterance.lang = speechLang === 'TH' ? 'th-TH' : 'en-US';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function updateLangButton() {
+        const menuLangBadge = document.getElementById('menu-lang-badge');
+        if (menuLangBadge) {
+            menuLangBadge.textContent = speechLang;
+        }
+    }
+
+    function toggleVoice() {
+        voiceEnabled = !voiceEnabled;
+        localStorage.setItem('got_voice', voiceEnabled);
+        updateVoiceButton();
+        if (voiceEnabled && window.speechSynthesis) {
+            let utterance = new SpeechSynthesisUtterance(speechLang === 'TH' ? "เปิดระบบเสียง" : "Voice enabled");
+            utterance.lang = speechLang === 'TH' ? 'th-TH' : 'en-US';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function updateVoiceButton() {
+        const btn = document.getElementById('btn-voice');
+        if (btn) {
+            if (voiceEnabled) {
+                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                btn.className = 'text-[10px] bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-emerald-500/30 shadow-sm';
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                btn.className = 'text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400';
+            }
+        }
+    }
+
+    function speakSpawnPoints(w, s) {
+        if (!voiceEnabled || !window.speechSynthesis) return;
+        const pts = gData.spawnData[w] && gData.spawnData[w][s] ? gData.spawnData[w][s] : [];
+        if (pts.length === 0) return;
+
+        let spokenText = "";
+        let langCode = 'en-US';
+
+        if (speechLang === 'TH') {
+            const spokenPointsTh = pts.map(item => {
+                if (!item) return "";
+                let parts = item.split(':');
+                let loc = parts[0];
+                let color = parts[1] || "";
+                
+                let thName = loc;
+                const pointInfo = gData.mapsData[curM]?.points?.find(p => p.id === loc);
+                if (pointInfo && pointInfo.name && pointInfo.name.th) {
+                    thName = pointInfo.name.th;
+                }
+                let thColor = color && colorMapTh[color] ? colorMapTh[color] : color;
+                return thColor ? `${thName} ${thColor}` : thName;
+            }).filter(Boolean);
+
+            if (spokenPointsTh.length === 0) return;
+            spokenText = `เวฟที่ ${w} จุด ${s}: ${spokenPointsTh.join(", ")}`;
+            langCode = 'th-TH';
+        } else {
+            const spokenPointsEn = pts.map(item => {
+                if (!item) return "";
+                let parts = item.split(':');
+                let loc = parts[0];
+                let color = parts[1] || "";
+                return color ? `${loc} ${color}` : loc;
+            }).filter(Boolean);
+
+            if (spokenPointsEn.length === 0) return;
+            spokenText = `Wave ${w}.${s}: ${spokenPointsEn.join(", ")}`;
+            langCode = 'en-US';
+        }
+
+        const utterance = new SpeechSynthesisUtterance(spokenText);
+        utterance.lang = langCode;
+        utterance.rate = 1.0;
         
-        waveTimerInterval = setInterval(() => {
-            waveTimeRemaining--;
-            if (waveTimeRemaining <= 0) {
-                let nextW = activeWave < 4 ? activeWave + 1 : 1;
-                startWaveTimer(nextW);
-                render();
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    }
+
+    function startSubWaveTimer(w, s) {
+        if (subWaveTimerInterval) clearInterval(subWaveTimerInterval);
+        subWaveTimeRemaining = (w === 4) ? 120 : 90; // Wave 4: 2.00 mins (120s), Others: 1.30 mins (90s)
+        
+        subWaveTimerInterval = setInterval(() => {
+            subWaveTimeRemaining--;
+            if (subWaveTimeRemaining <= 0) {
+                let nextW = activeSubW;
+                let nextS = activeSubS + 1;
+                const limit = nextW === 4 ? 4 : 3;
+                if (nextS > limit) {
+                    nextW = activeSubW < 4 ? activeSubW + 1 : 1;
+                    nextS = 1;
+                }
+                activateSubWave(nextW, nextS);
+            } else {
+                const el = document.getElementById('active-timer-el');
+                if (el) {
+                    let mins = Math.floor(subWaveTimeRemaining / 60);
+                    let secs = subWaveTimeRemaining % 60;
+                    el.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                }
             }
         }, 1000);
     }
 
-    function highlightWave(w) {
-        if (isAdmin) return; 
-        startWaveTimer(w);
+    function activateSubWave(w, s) {
+        if (isAdmin) return;
+        if (activeSubW === w && activeSubS === s) {
+            if (subWaveTimerInterval) clearInterval(subWaveTimerInterval);
+            subWaveTimerInterval = null;
+            activeSubW = null;
+            activeSubS = null;
+        } else {
+            activeSubW = w;
+            activeSubS = s;
+            speakSpawnPoints(w, s);
+            startSubWaveTimer(w, s);
+        }
         render();
     }
 
     function openLogin() { 
-        if (waveTimerInterval) clearInterval(waveTimerInterval);
-        waveTimerInterval = null;
-        activeWave = null; 
+        if (subWaveTimerInterval) clearInterval(subWaveTimerInterval);
+        subWaveTimerInterval = null;
+        activeSubW = null; activeSubS = null; 
         if(isAdmin) { 
             exitAdmin(); 
         } else { 
@@ -683,15 +852,20 @@
         document.getElementById('chevron-map').classList.toggle('hidden', !isAdmin);
         document.getElementById('admin-bar').classList.toggle('hidden', !isAdmin);
         
-        const btnQR = document.querySelector('button[onclick="openQRModal()"]');
-        if(btnQR) btnQR.style.display = isAdmin ? 'none' : 'block';
+        const headerButtons = document.getElementById('header-buttons');
+        if (headerButtons) headerButtons.classList.toggle('hidden', isAdmin);
+        if (isAdmin) closeMenu();
 
-        document.getElementById('btn-login').innerHTML = isAdmin ? '<i class="fa-solid fa-gear text-red-400"></i>' : '<i class="fa-solid fa-gear"></i>';
-        document.getElementById('btn-login').className = isAdmin ? 'text-[10px] bg-red-500/20 px-3 py-1.5 rounded-full transition' : 'text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition';
-        
-        const btnTheme = document.getElementById('btn-theme');
-        if (btnTheme) {
-            btnTheme.innerHTML = document.documentElement.classList.contains('dark') ? '<i class="fa-solid fa-sun text-amber-400"></i>' : '<i class="fa-solid fa-moon"></i>';
+        updateVoiceButton();
+        updateLangButton();
+        const isDark = document.documentElement.classList.contains('dark');
+        const menuThemeIcon = document.getElementById('menu-theme-icon');
+        const menuThemeBadge = document.getElementById('menu-theme-badge');
+        if (menuThemeIcon) {
+            menuThemeIcon.className = isDark ? 'fa-solid fa-sun text-amber-400 w-4 text-center' : 'fa-solid fa-moon text-amber-500 w-4 text-center';
+        }
+        if (menuThemeBadge) {
+            menuThemeBadge.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         }
 
         document.getElementById('date-display').innerHTML = `Week: ${mapDate}`;
@@ -725,11 +899,11 @@
         const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
         
         [1,2,3,4].forEach(w => {
-            const isActive = (activeWave === w);
+            const isWaveActive = (activeSubW === w);
             
             let cardStyle = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm border-l-[6px] border-${clrs[w]}-400 dark:border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300`;
-            if (isActive && !isAdmin) {
-                cardStyle = `bg-${clrs[w]}-50 dark:bg-${clrs[w]}-950/60 rounded-2xl shadow-lg border-l-[8px] border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300 transform scale-[1.02] ring-2 ring-${clrs[w]}-200 dark:ring-${clrs[w]}-800 z-10`;
+            if (isWaveActive && !isAdmin) {
+                cardStyle = `bg-${clrs[w]}-50/40 dark:bg-${clrs[w]}-950/40 rounded-2xl shadow-md border-l-[8px] border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300 ring-1 ring-${clrs[w]}-200 dark:ring-${clrs[w]}-800 z-10`;
             }
 
             let html = `
@@ -740,22 +914,31 @@
             
             [1,2,3].forEach(s => {
                 const limit = w === 4 ? 4 : 3;
+                const isSubActive = (activeSubW === w && activeSubS === s);
                 
-                let rowStyle = 'border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 rounded-xl';
-                if (!isActive || isAdmin) {
+                let rowStyle = 'border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 rounded-xl px-1 transition-all duration-300';
+                if (isSubActive && !isAdmin) {
+                    rowStyle = `bg-${clrs[w]}-100 dark:bg-${clrs[w]}-900/80 rounded-xl shadow-md border border-${clrs[w]}-300 dark:border-${clrs[w]}-600 transform scale-[1.02] my-1 ring-1 ring-${clrs[w]}-400 z-20`;
+                } else if (!isAdmin) {
                     rowStyle += ' hover:bg-gray-50 dark:hover:bg-slate-700/50'; 
                 }
                 
                 let numClass = 'text-gray-300 dark:text-slate-600';
-                if (isActive && !isAdmin) {
-                    numClass = `text-${clrs[w]}-600 dark:text-${clrs[w]}-400 scale-110 drop-shadow-sm`;
+                let numDisplay = `${w}.${s}`;
+                let numId = '';
+                if (isSubActive && !isAdmin) {
+                    numClass = `text-${clrs[w]}-600 dark:text-${clrs[w]}-300 scale-110 drop-shadow font-black`;
+                    let mins = Math.floor(subWaveTimeRemaining / 60);
+                    let secs = subWaveTimeRemaining % 60;
+                    numDisplay = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                    numId = `id="active-timer-el"`;
                 }
                 
-                const onClickAction = isAdmin ? `openEdit(${w}, ${s})` : `highlightWave(${w})`;
+                const onClickAction = isAdmin ? `openEdit(${w}, ${s})` : `activateSubWave(${w}, ${s})`;
                 
                 html += `
                     <div class="flex items-center py-2.5 transition-all duration-300 cursor-pointer ${rowStyle}" onclick="${onClickAction}">
-                        <div class="w-12 text-center font-black ${numClass} text-sm tracking-widest transition-transform">${w}.${s}</div>
+                        <div ${numId} class="w-12 text-center font-black ${numClass} text-sm tracking-widest transition-transform">${numDisplay}</div>
                         <div class="flex-1 flex justify-evenly items-center">
                 `;
                 
@@ -769,7 +952,7 @@
                         if (i[locName]) {
                             let iconClass = '';
                             if (isAdmin) iconClass += 'hover:scale-110 ';
-                            if (isActive && !isAdmin) iconClass += 'scale-110 drop-shadow-md '; 
+                            if (isSubActive && !isAdmin) iconClass += 'scale-110 drop-shadow-md '; 
                             
                             // 🌟 สร้างจุดสีใต้ไอคอน
                             let colorDotsHtml = '';
