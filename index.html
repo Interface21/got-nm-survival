@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GoT Legends Ultra Focus</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai+Looped:wght@400;500;600;700;800&display=swap');
+        html {
+            height: 100%;
+            height: -webkit-fill-available;
+        }
         body { 
             font-family: 'JetBrains Mono', 'Noto Sans Thai Looped', sans-serif; 
             background-color: #DBD8C9; 
@@ -17,17 +24,32 @@
             display: flex; 
             justify-content: center; 
             height: 100vh; 
+            height: -webkit-fill-available;
+            height: 100dvh; 
             overflow: hidden; 
+            transition: background-color 0.3s ease;
+        }
+        html.dark body {
+            background-color: #090D16;
         }
         #app { 
             width: 100%; 
             max-width: 550px; 
             height: 100%; 
+            max-height: 100vh;
+            max-height: -webkit-fill-available;
+            max-height: 100dvh; 
             display: flex; 
             flex-direction: column; 
             background-color: #F4F4F5; 
             box-shadow: 0 0 40px rgba(0,0,0,0.15); 
             position: relative;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+        html.dark #app {
+            background-color: #0F172A;
+            box-shadow: 0 0 50px rgba(0,0,0,0.7);
         }
         .header { 
             background: #111827; 
@@ -38,6 +60,10 @@
             align-items: center; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             z-index: 20;
+        }
+        html.dark .header {
+            background: #090D16;
+            border-bottom: 1px solid #1E293B;
         }
         ::-webkit-scrollbar { display: none; }
     </style>
@@ -55,15 +81,16 @@
             </div>
         </div>
         <div class="flex gap-2 items-center">
+            <button onclick="toggleDarkMode()" id="btn-theme" class="text-[10px] bg-amber-500/20 text-amber-300 hover:bg-amber-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-amber-500/30" title="Toggle Dark Mode"><i class="fa-solid fa-moon"></i></button>
             <button onclick="openQRModal()" class="text-[10px] bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-indigo-500/30"><i class="fa-solid fa-qrcode"></i></button>
-            <button onclick="openLogin()" id="btn-login" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"><i class="fa-solid fa-lock"></i></button>
+            <button onclick="openLogin()" id="btn-login" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition"><i class="fa-solid fa-gear"></i></button>
         </div>
     </div>
 
     <!-- Loading Overlay -->
-    <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#F4F4F5] flex flex-col items-center justify-center transition-opacity duration-300">
+    <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#F4F4F5] dark:bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-300">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-3"></i>
-        <p id="loading-text" class="text-xs font-bold text-gray-500 tracking-wider text-center mt-2">CONNECTING...<br/><span class="text-[10px] font-normal">กำลังเชื่อมต่อข้อมูล</span></p>
+        <p id="loading-text" class="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider text-center mt-2">CONNECTING...<br/><span class="text-[10px] font-normal">กำลังเชื่อมต่อข้อมูล</span></p>
     </div>
 
     <!-- Popup แจ้งเตือนสัปดาห์ใหม่ -->
@@ -77,21 +104,21 @@
 
     <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
         
-        <div class="bg-white rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 gap-1">
-            <div class="flex-1 flex items-center bg-gray-50 rounded-xl px-2 relative w-full">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 dark:border-slate-700 gap-1 transition-colors">
+            <div class="flex-1 flex items-center bg-gray-50 dark:bg-slate-900/80 rounded-xl px-2 relative w-full transition-colors">
                 <i class="fa-solid fa-location-dot text-gray-400 mr-2 text-sm"></i>
-                <select id="map-select" onchange="changeMap(this.value)" class="w-full py-2 font-black text-sm text-gray-800 bg-transparent outline-none cursor-pointer appearance-none">
+                <select id="map-select" onchange="changeMap(this.value)" class="w-full py-2 font-black text-sm text-gray-800 dark:text-gray-100 bg-transparent outline-none cursor-pointer appearance-none">
                     <!-- โหลดจาก JS -->
                 </select>
                 <i id="chevron-map" class="fa-solid fa-caret-down text-gray-400 absolute right-3 pointer-events-none hidden"></i>
             </div>
             
             <div class="flex items-center gap-1.5 w-full md:w-auto">
-                <div class="flex-1 md:flex-initial px-3 py-2 text-xs font-black text-indigo-600 tracking-wider text-center bg-indigo-50 rounded-xl border border-indigo-100 flex items-center justify-center gap-1.5 shadow-sm" title="จำนวนผู้เข้าชมแอปทั้งหมด">
+                <div class="flex-1 md:flex-initial px-3 py-2 text-xs font-black text-indigo-600 dark:text-indigo-400 tracking-wider text-center bg-indigo-50 dark:bg-indigo-950/50 rounded-xl border border-indigo-100 dark:border-indigo-900/60 flex items-center justify-center gap-1.5 shadow-sm transition-colors" title="จำนวนผู้เข้าชมแอปทั้งหมด">
                     <i class="fa-solid fa-users text-indigo-500"></i>
                     <span id="visit-counter">...</span>
                 </div>
-                <div id="date-display" class="flex-1 md:flex-initial px-3 py-2 text-xs font-black text-red-500 tracking-wider text-center bg-red-50 rounded-xl border border-red-100 whitespace-nowrap shadow-sm">
+                <div id="date-display" class="flex-1 md:flex-initial px-3 py-2 text-xs font-black text-red-500 dark:text-red-400 tracking-wider text-center bg-red-50 dark:bg-red-950/50 rounded-xl border border-red-100 dark:border-red-900/60 whitespace-nowrap shadow-sm transition-colors">
                     <!-- โหลดจาก JS -->
                 </div>
             </div>
@@ -107,13 +134,13 @@
 
         <!-- Credit Footer -->
         <div class="text-center mt-2 mb-4">
-            <span class="text-[10px] font-bold text-gray-400 tracking-widest uppercase">Developed by ZeroEchoTH (PSN)</span>
+            <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 tracking-widest uppercase">Developed by ZeroEchoTH (PSN)</span>
         </div>
     </div>
 
     <!-- Admin Bar -->
-    <div id="admin-bar" class="hidden absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 p-2.5 flex justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-40">
-        <button id="btn-clear" onclick="clearData()" class="text-red-500 bg-red-50 hover:bg-red-100 font-bold text-[11px] px-3 py-2 rounded-xl transition flex flex-col items-center leading-none"><i class="fa-solid fa-trash-can mb-1"></i> Clear (ล้าง)</button>
+    <div id="admin-bar" class="hidden absolute bottom-0 left-0 w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-2.5 flex justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-40 transition-colors" style="padding-bottom: max(0.625rem, env(safe-area-inset-bottom));">
+        <button id="btn-clear" onclick="clearData()" class="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 font-bold text-[11px] px-3 py-2 rounded-xl transition flex flex-col items-center leading-none"><i class="fa-solid fa-trash-can mb-1"></i> Clear (ล้าง)</button>
         <div class="flex gap-2">
             <button id="btn-save" onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-cloud-arrow-up mb-1"></i> Save (บันทึก)</button>
             <button id="btn-exit" onclick="exitAdmin()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-xmark mb-1"></i> Exit (ปิด)</button>
@@ -121,48 +148,48 @@
     </div>
 
     <!-- QR Code Modal -->
-    <div id="qr-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
-            <button onclick="closeQRModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600"></i></button>
+    <div id="qr-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+            <button onclick="closeQRModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
             
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 bg-indigo-50 border border-indigo-100">
-                <i class="fa-solid fa-share-nodes text-indigo-500 text-xl"></i>
+            <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60">
+                <i class="fa-solid fa-share-nodes text-indigo-500 dark:text-indigo-400 text-xl"></i>
             </div>
             
-            <h3 class="font-black mb-1 text-lg text-gray-800">Share App</h3>
-            <p class="text-[11px] text-gray-500 mb-5 font-medium">สแกนเพื่อเข้าใช้งานแอปพลิเคชัน</p>
+            <h3 class="font-black mb-1 text-lg text-gray-800 dark:text-white">Share App</h3>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 mb-5 font-medium">สแกนเพื่อเข้าใช้งานแอปพลิเคชัน</p>
             
             <div class="bg-white p-2.5 rounded-2xl shadow-sm border border-gray-200 mb-5 inline-block">
                 <canvas id="qr-canvas" class="rounded-lg"></canvas>
             </div>
             
-            <button onclick="downloadQR()" class="w-full bg-indigo-600 text-white hover:bg-indigo-700 p-3.5 rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-200">
+            <button onclick="downloadQR()" class="w-full bg-indigo-600 text-white hover:bg-indigo-700 p-3.5 rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none">
                 <i class="fa-solid fa-download"></i> Save QR Code
             </button>
         </div>
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl">
-            <h3 class="font-black mb-1 text-lg text-gray-800">Admin Login</h3>
-            <p class="text-xs text-gray-500 mb-4">เข้าสู่ระบบแอดมิน</p>
-            <input type="password" id="pass-field" class="w-full border border-gray-200 p-3 rounded-xl text-center text-xl tracking-[0.3em] mb-4 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50" placeholder="•••••">
+    <div id="login-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+            <h3 class="font-black mb-1 text-lg text-gray-800 dark:text-white">Admin Login</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">เข้าสู่ระบบแอดมิน</p>
+            <input type="password" id="pass-field" class="w-full border border-gray-200 dark:border-slate-600 p-3 rounded-xl text-center text-xl tracking-[0.3em] mb-4 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-slate-900 dark:text-white" placeholder="•••••">
             <div class="flex gap-2">
-                <button onclick="closeLogin()" class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
+                <button onclick="closeLogin()" class="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
                 <button id="btn-confirm-login" onclick="doLogin()" class="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Confirm<br/><span class="text-[10px] font-normal">ยืนยัน</span></button>
             </div>
         </div>
     </div>
 
     <!-- Dynamic Confirm/Alert Modal -->
-    <div id="dynamic-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-white p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden">
-            <div id="modal-icon-bg" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100">
-                <i id="modal-icon" class="fa-solid fa-triangle-exclamation text-yellow-500 text-3xl"></i>
+    <div id="dynamic-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+            <div id="modal-icon-bg" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100 dark:bg-yellow-950/60">
+                <i id="modal-icon" class="fa-solid fa-triangle-exclamation text-yellow-500 dark:text-yellow-400 text-3xl"></i>
             </div>
-            <h3 class="font-black mb-2 text-lg text-gray-800" id="dynamic-title">Title</h3>
-            <p class="text-xs text-gray-500 mb-6 leading-relaxed px-2 font-medium" id="dynamic-desc">Desc</p>
+            <h3 class="font-black mb-2 text-lg text-gray-800 dark:text-white" id="dynamic-title">Title</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed px-2 font-medium" id="dynamic-desc">Desc</p>
             <div class="flex gap-2" id="dynamic-buttons">
                 <!-- โหลดปุ่มผ่าน JS -->
             </div>
@@ -171,16 +198,18 @@
 
     <!-- Edit Modal (เพิ่ม Scroll หากจอมือถือเล็ก) -->
     <div id="edit-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
-        <div class="bg-white w-full p-5 rounded-t-3xl shadow-2xl max-w-md max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4 sticky top-0 bg-white z-10 pb-2 border-b border-gray-100">
-                <h3 id="modal-title" class="font-black text-lg text-gray-800">Edit Wave</h3>
-                <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600"></i></button>
+        <div class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 82vh; max-height: 82dvh;">
+            <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
+                <h3 id="modal-title" class="font-black text-lg text-gray-800 dark:text-white">Edit Wave</h3>
+                <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
             </div>
-            <div id="modal-body" class="flex flex-col gap-4 mb-5"></div>
-            <button onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg transition flex flex-col items-center sticky bottom-0">
-                <span class="text-sm">Update Wave</span>
-                <span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้</span>
-            </button>
+            <div id="modal-body" class="flex flex-col gap-4 p-5 overflow-y-auto flex-1"></div>
+            <div class="bg-white dark:bg-slate-800 px-5 pt-3 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
+                <button onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg dark:shadow-none transition flex flex-col items-center">
+                    <span class="text-sm">Update Wave</span>
+                    <span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -194,6 +223,9 @@
 </div>
 
 <script>
+    if (localStorage.getItem('got_theme') === 'dark' || (!localStorage.getItem('got_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+    }
     const mapIcons = {
         "hidden_temple": { "Cemetery": "🪦", "Pagoda": "🏯", "Courtyard": "⛩️" },
         "river_village": { "RicePaddies": "🌾", "Beach": "⛵", "Village": "🛖" },
@@ -235,6 +267,8 @@
     let mapDate = "", adminPass = "";
     let editingW = null, editingS = null, tempPts = [];
     let activeWave = null;
+    let waveTimerInterval = null;
+    let waveTimeRemaining = 300; // 5 mins in seconds
     let hasUnsavedChanges = false;
     let originalSpawnDataString = ""; 
     let originalMapId = ""; 
@@ -279,6 +313,19 @@
         document.getElementById('qr-modal').classList.add('hidden');
     }
 
+    function toggleDarkMode() {
+        const html = document.documentElement;
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark');
+            localStorage.setItem('got_theme', 'light');
+            document.getElementById('btn-theme').innerHTML = '<i class="fa-solid fa-moon"></i>';
+        } else {
+            html.classList.add('dark');
+            localStorage.setItem('got_theme', 'dark');
+            document.getElementById('btn-theme').innerHTML = '<i class="fa-solid fa-sun text-amber-400"></i>';
+        }
+    }
+
     function downloadQR() {
         const canvas = document.getElementById('qr-canvas');
         const link = document.createElement('a');
@@ -302,10 +349,10 @@
                 <button onclick="closeDynamicModal()" class="flex-1 bg-red-600 text-white hover:bg-red-700 p-3 rounded-xl font-bold transition text-sm flex flex-col items-center leading-none">OK <span class="font-normal text-[10px] mt-1">(ตกลง)</span></button>
             `;
         } else if (type === 'warning' || type === 'confirm') {
-            iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100";
-            icon.className = "fa-solid fa-triangle-exclamation text-yellow-500 text-3xl";
+            iconBg.className = "w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100 dark:bg-yellow-950/60";
+            icon.className = "fa-solid fa-triangle-exclamation text-yellow-500 dark:text-yellow-400 text-3xl";
             btnContainer.innerHTML = `
-                <button onclick="closeDynamicModal()" class="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
+                <button onclick="closeDynamicModal()" class="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-600 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Cancel<br/><span class="text-[10px] font-normal">ยกเลิก</span></button>
                 <button id="btn-dynamic-confirm" class="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 p-2.5 rounded-xl font-bold transition text-xs leading-tight">Confirm<br/><span class="text-[10px] font-normal">ยืนยัน</span></button>
             `;
             document.getElementById('btn-dynamic-confirm').onclick = () => {
@@ -329,6 +376,8 @@
     }
     
     function changeMap(v) { 
+        if (waveTimerInterval) clearInterval(waveTimerInterval);
+        waveTimerInterval = null;
         curM = v; 
         activeWave = null; 
         
@@ -343,13 +392,30 @@
         render(); 
     }
 
+    function startWaveTimer(w) {
+        if (waveTimerInterval) clearInterval(waveTimerInterval);
+        activeWave = w;
+        waveTimeRemaining = 300; // 5 minutes in seconds
+        
+        waveTimerInterval = setInterval(() => {
+            waveTimeRemaining--;
+            if (waveTimeRemaining <= 0) {
+                let nextW = activeWave < 4 ? activeWave + 1 : 1;
+                startWaveTimer(nextW);
+                render();
+            }
+        }, 1000);
+    }
+
     function highlightWave(w) {
         if (isAdmin) return; 
-        activeWave = (activeWave === w) ? null : w;
+        startWaveTimer(w);
         render();
     }
 
     function openLogin() { 
+        if (waveTimerInterval) clearInterval(waveTimerInterval);
+        waveTimerInterval = null;
         activeWave = null; 
         if(isAdmin) { 
             exitAdmin(); 
@@ -439,10 +505,10 @@
             let currentColors = currentRaw.includes(':') ? currentRaw.split(':')[1].split(',') : [];
 
             const row = document.createElement('div');
-            row.className = "bg-gray-50/50 p-2 rounded-2xl border border-gray-100";
+            row.className = "bg-gray-50/50 dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors";
             
             // 1. ส่วนเลือกสถานที่
-            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-wide px-1">Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></div>`;
+            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-2 uppercase tracking-wide px-1">Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></div>`;
             const grid = document.createElement('div');
             grid.className = "grid grid-cols-3 gap-2";
             
@@ -450,7 +516,7 @@
                 const btn = document.createElement('button');
                 const isSel = (currentLoc === enName);
                 
-                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white shadow-sm transform scale-[1.03]' : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100'}`;
+                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white dark:bg-slate-800 dark:text-white shadow-sm transform scale-[1.03]' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
                 
                 let thName = enName;
                 const pointInfo = gData.mapsData[curM].points.find(p => p.id === enName);
@@ -458,8 +524,8 @@
                 
                 btn.innerHTML = `
                     <span class="text-2xl ${isSel?'':'opacity-60'} leading-none mb-1">${mapIcons[curM][enName]}</span>
-                    <span class="text-[10px] font-bold ${isSel?'text-indigo-700':'text-gray-700'} leading-tight">${enName}</span>
-                    <span class="text-[9px] font-normal ${isSel?'text-indigo-500':'text-gray-400'} leading-tight">${thName}</span>
+                    <span class="text-[10px] font-bold ${isSel?'text-indigo-700 dark:text-indigo-400':'text-gray-700 dark:text-gray-300'} leading-tight">${enName}</span>
+                    <span class="text-[9px] font-normal ${isSel?'text-indigo-500 dark:text-indigo-300':'text-gray-400 dark:text-gray-400'} leading-tight">${thName}</span>
                 `;
                 
                 btn.onclick = () => { 
@@ -479,10 +545,10 @@
                 const maxColors = (editingW === 4) ? 2 : 1;
                 
                 const colorSection = document.createElement('div');
-                colorSection.className = "mt-3 pt-2 border-t border-gray-200 flex items-center justify-between px-1";
+                colorSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between px-1";
                 
                 const label = document.createElement('div');
-                label.innerHTML = `<span class="text-[10px] font-bold text-gray-500">Aura Color:</span> <span class="text-[9px] text-gray-400">(Max ${maxColors})</span>`;
+                label.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">Aura Color:</span> <span class="text-[9px] text-gray-400 dark:text-gray-400">(Max ${maxColors})</span>`;
                 colorSection.appendChild(label);
 
                 const colorBtns = document.createElement('div');
@@ -492,7 +558,7 @@
                     let isColorSel = currentColors.includes(c.id);
                     let cBtn = document.createElement('button');
                     
-                    cBtn.className = `w-7 h-7 rounded-full ${c.hexClass} transition-all border-2 ${isColorSel ? 'border-gray-800 scale-110 shadow-md ' + c.shadowClass : 'border-transparent opacity-60 hover:opacity-100'}`;
+                    cBtn.className = `w-7 h-7 rounded-full ${c.hexClass} transition-all border-2 ${isColorSel ? 'border-gray-800 dark:border-white scale-110 shadow-md ' + c.shadowClass : 'border-transparent opacity-60 hover:opacity-100'}`;
                     
                     if(isColorSel) {
                         cBtn.innerHTML = '<i class="fa-solid fa-check text-white text-[10px]"></i>';
@@ -620,8 +686,13 @@
         const btnQR = document.querySelector('button[onclick="openQRModal()"]');
         if(btnQR) btnQR.style.display = isAdmin ? 'none' : 'block';
 
-        document.getElementById('btn-login').innerHTML = isAdmin ? '<i class="fa-solid fa-unlock text-red-400"></i>' : '<i class="fa-solid fa-lock"></i>';
+        document.getElementById('btn-login').innerHTML = isAdmin ? '<i class="fa-solid fa-gear text-red-400"></i>' : '<i class="fa-solid fa-gear"></i>';
         document.getElementById('btn-login').className = isAdmin ? 'text-[10px] bg-red-500/20 px-3 py-1.5 rounded-full transition' : 'text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition';
+        
+        const btnTheme = document.getElementById('btn-theme');
+        if (btnTheme) {
+            btnTheme.innerHTML = document.documentElement.classList.contains('dark') ? '<i class="fa-solid fa-sun text-amber-400"></i>' : '<i class="fa-solid fa-moon"></i>';
+        }
 
         document.getElementById('date-display').innerHTML = `Week: ${mapDate}`;
         const visitEl = document.getElementById('visit-counter');
@@ -639,11 +710,11 @@
             if (pointInfo) thName = pointInfo.name.th;
             
             leg.innerHTML += `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 opacity-90 hover:opacity-100 transition-all hover:shadow-md cursor-default">
+                <div class="bg-white dark:bg-slate-800 dark:border-slate-700 rounded-xl shadow-sm border border-gray-100 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 opacity-90 hover:opacity-100 transition-all hover:shadow-md cursor-default">
                     <span class="text-[24px] md:text-[28px] drop-shadow-sm leading-none">${i[k]}</span>
                     <div class="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span class="text-[9px] md:text-[10px] font-bold text-gray-700 uppercase tracking-widest leading-tight">${k}</span>
-                        <span class="text-[8px] md:text-[9px] font-medium text-gray-400 leading-tight">${thName}</span>
+                        <span class="text-[9px] md:text-[10px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest leading-tight">${k}</span>
+                        <span class="text-[8px] md:text-[9px] font-medium text-gray-400 dark:text-gray-400 leading-tight">${thName}</span>
                     </div>
                 </div>
             `;
@@ -656,28 +727,28 @@
         [1,2,3,4].forEach(w => {
             const isActive = (activeWave === w);
             
-            let cardStyle = `bg-white rounded-2xl shadow-sm border-l-[6px] border-${clrs[w]}-400 overflow-hidden relative transition-all duration-300`;
+            let cardStyle = `bg-white dark:bg-slate-800 rounded-2xl shadow-sm border-l-[6px] border-${clrs[w]}-400 dark:border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300`;
             if (isActive && !isAdmin) {
-                cardStyle = `bg-${clrs[w]}-50 rounded-2xl shadow-lg border-l-[8px] border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300 transform scale-[1.02] ring-2 ring-${clrs[w]}-200 z-10`;
+                cardStyle = `bg-${clrs[w]}-50 dark:bg-${clrs[w]}-950/60 rounded-2xl shadow-lg border-l-[8px] border-${clrs[w]}-500 overflow-hidden relative transition-all duration-300 transform scale-[1.02] ring-2 ring-${clrs[w]}-200 dark:ring-${clrs[w]}-800 z-10`;
             }
 
             let html = `
                 <div class="${cardStyle}">
-                    <div class="absolute -right-4 -top-8 text-[110px] font-black text-${clrs[w]}-500 opacity-10 pointer-events-none select-none">W${w}</div>
+                    <div class="absolute -right-4 -top-8 text-[110px] font-black text-${clrs[w]}-500 opacity-10 dark:opacity-15 pointer-events-none select-none">W${w}</div>
                     <div class="flex flex-col relative z-10 px-2 py-1">
             `;
             
             [1,2,3].forEach(s => {
                 const limit = w === 4 ? 4 : 3;
                 
-                let rowStyle = 'border-b border-gray-100/60 last:border-0 rounded-xl';
+                let rowStyle = 'border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 rounded-xl';
                 if (!isActive || isAdmin) {
-                    rowStyle += ' hover:bg-gray-50'; 
+                    rowStyle += ' hover:bg-gray-50 dark:hover:bg-slate-700/50'; 
                 }
                 
-                let numClass = 'text-gray-300';
+                let numClass = 'text-gray-300 dark:text-slate-600';
                 if (isActive && !isAdmin) {
-                    numClass = `text-${clrs[w]}-600 scale-110 drop-shadow-sm`;
+                    numClass = `text-${clrs[w]}-600 dark:text-${clrs[w]}-400 scale-110 drop-shadow-sm`;
                 }
                 
                 const onClickAction = isAdmin ? `openEdit(${w}, ${s})` : `highlightWave(${w})`;
@@ -720,10 +791,10 @@
                                 </div>
                             `;
                         } else {
-                            html += `<span class="text-sm font-bold text-gray-200 border-2 border-dashed border-gray-200 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
+                            html += `<span class="text-sm font-bold text-gray-200 dark:text-slate-700 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
                         }
                     } else {
-                        html += `<span class="text-sm font-bold text-gray-200 border-2 border-dashed border-gray-200 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
+                        html += `<span class="text-sm font-bold text-gray-200 dark:text-slate-700 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
                     }
                 }
                 
