@@ -170,6 +170,7 @@
     <div id="admin-bar" class="hidden absolute bottom-0 left-0 w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-2.5 flex justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-40 transition-colors" style="padding-bottom: max(0.625rem, env(safe-area-inset-bottom));">
         <button id="btn-clear" onclick="clearData()" class="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 font-bold text-[11px] px-3 py-2 rounded-xl transition flex flex-col items-center leading-none"><i class="fa-solid fa-trash-can mb-1"></i> Clear (ล้าง)</button>
         <div class="flex gap-2">
+            <button id="btn-logs" onclick="openAdminReportLogsModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-clipboard-list mb-1"></i> Logs (รายงาน)</button>
             <button id="btn-save" onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-cloud-arrow-up mb-1"></i> Save (บันทึก)</button>
             <button id="btn-exit" onclick="exitAdmin()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-xmark mb-1"></i> Exit (ปิด)</button>
         </div>
@@ -281,8 +282,8 @@
     </div>
 
     <!-- QR Code Modal -->
-    <div id="qr-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
-        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+    <div id="qr-modal" onclick="if(event.target===this) closeQRModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
             <button onclick="closeQRModal()" class="absolute top-4 right-4 w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
             
             <div class="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60">
@@ -303,8 +304,8 @@
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
-        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+    <div id="login-modal" onclick="if(event.target===this) closeLogin()" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
             <h3 class="font-black mb-1 text-lg text-gray-800 dark:text-white">Admin Login</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">เข้าสู่ระบบแอดมิน</p>
             <input type="password" id="pass-field" class="w-full border border-gray-200 dark:border-slate-600 p-3 rounded-xl text-center text-xl tracking-[0.3em] mb-4 outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-slate-900 dark:text-white" placeholder="•••••">
@@ -316,8 +317,8 @@
     </div>
 
     <!-- Dynamic Confirm/Alert Modal -->
-    <div id="dynamic-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
-        <div class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+    <div id="dynamic-modal" onclick="if(event.target===this) closeDynamicModal()" class="hidden absolute inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
             <div id="modal-icon-bg" class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-yellow-100 dark:bg-yellow-950/60">
                 <i id="modal-icon" class="fa-solid fa-triangle-exclamation text-yellow-500 dark:text-yellow-400 text-3xl"></i>
             </div>
@@ -330,8 +331,8 @@
     </div>
 
     <!-- Edit Modal (เพิ่ม Scroll หากจอมือถือเล็ก) -->
-    <div id="edit-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
-        <div class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 82vh; max-height: 82dvh;">
+    <div id="edit-modal" onclick="if(event.target===this) closeEdit()" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 82vh; max-height: 82dvh;">
             <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
                 <h3 id="modal-title" class="font-black text-lg text-gray-800 dark:text-white">Edit Wave</h3>
                 <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
@@ -346,8 +347,42 @@
         </div>
     </div>
 
+    <!-- User Wave Report Modal -->
+    <div id="user-report-modal" onclick="if(event.target===this) closeUserReportModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh;">
+            <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
+                <div>
+                    <h3 id="user-report-title" class="font-black text-lg text-gray-800 dark:text-white">แจ้ง/ส่งข้อมูลจุดเกิด</h3>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">เลือกจุดเกิดและออร่าสีที่ถูกต้องของ Wave นี้</p>
+                </div>
+                <button onclick="closeUserReportModal()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
+            </div>
+            <div id="user-report-body" class="flex flex-col gap-4 p-5 overflow-y-auto flex-1"></div>
+            <div class="bg-white dark:bg-slate-800 px-5 pt-3 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
+                <button id="btn-submit-report" onclick="submitUserReport()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                    <span class="text-sm">ส่งข้อมูลรายงาน (Submit Report)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Report Logs Modal -->
+    <div id="admin-report-modal" onclick="if(event.target===this) closeAdminReportLogsModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden flex flex-col my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh;">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-slate-700">
+                <div>
+                    <h3 id="admin-report-title" class="font-black text-lg text-gray-800 dark:text-white">📋 Log ข้อมูลที่ผู้ใช้รายงาน</h3>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">ตรวจสอบและกดอนุมัติเพื่อบันทึกลงแถวที่ 16</p>
+                </div>
+                <button onclick="closeAdminReportLogsModal()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
+            </div>
+            <div id="admin-report-logs-body" class="flex flex-col gap-3 overflow-y-auto flex-1 pr-1"></div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
-    <div id="toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-sm font-bold z-50 shadow-xl flex items-center gap-2 text-center">
+    <div id="toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-sm font-bold z-[100] shadow-xl flex items-center gap-2 text-center">
         <i class="fa-solid fa-circle-check text-green-400"></i>
         <div>
             Saved! <span class="text-xs font-normal text-gray-300 ml-1">(บันทึกสำเร็จ)</span>
@@ -563,6 +598,34 @@
 
     function closeDynamicModal() {
         document.getElementById('dynamic-modal').classList.add('hidden');
+    }
+
+    // 🌟 ปิด Modal ทุกชนิดเมื่อคลิกที่พื้นที่ด้านนอก (Outside Backdrop Click)
+    window.addEventListener('click', (e) => {
+        const modals = [
+            { id: 'qr-modal', closeFn: typeof closeQRModal === 'function' ? closeQRModal : null },
+            { id: 'login-modal', closeFn: typeof closeLogin === 'function' ? closeLogin : null },
+            { id: 'dynamic-modal', closeFn: typeof closeDynamicModal === 'function' ? closeDynamicModal : null },
+            { id: 'edit-modal', closeFn: typeof closeEdit === 'function' ? closeEdit : null },
+            { id: 'user-report-modal', closeFn: typeof closeUserReportModal === 'function' ? closeUserReportModal : null },
+            { id: 'admin-report-modal', closeFn: typeof closeAdminReportLogsModal === 'function' ? closeAdminReportLogsModal : null }
+        ];
+        modals.forEach(m => {
+            const el = document.getElementById(m.id);
+            if (el && e.target === el && !el.classList.contains('hidden') && m.closeFn) {
+                m.closeFn();
+            }
+        });
+    });
+
+    function showToast(msg, type = 'success') {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        const iconClass = type === 'error' ? 'fa-solid fa-circle-xmark text-red-400' : 'fa-solid fa-circle-check text-emerald-400';
+        t.innerHTML = `<i class="${iconClass}"></i> <div class="text-xs font-bold">${msg}</div>`;
+        t.classList.remove('hidden');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.add('hidden'), 3000);
     }
 
     function showUpdateNotice() {
@@ -968,6 +1031,345 @@
         render(); 
     }
 
+    // 📢 User Reporting Logic
+    let userReportingW = null, userReportingS = null, tempReportPts = [];
+
+    function openUserReport(w, s) {
+        userReportingW = w;
+        userReportingS = s;
+        tempReportPts = [...(gData.spawnData[w][s] || [])];
+        renderUserReportModal();
+        document.getElementById('user-report-modal').classList.remove('hidden');
+    }
+
+    function closeUserReportModal() {
+        document.getElementById('user-report-modal').classList.add('hidden');
+        userReportingW = null;
+        userReportingS = null;
+    }
+
+    function renderUserReportModal() {
+        document.getElementById('user-report-title').innerHTML = `แจ้ง/ส่งข้อมูลจุดเกิด <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">Wave ${userReportingW}.${userReportingS}</span>`;
+        const body = document.getElementById('user-report-body');
+        body.innerHTML = "";
+        const limit = (userReportingW === 4) ? 4 : 3;
+        
+        for(let i=0; i<limit; i++) {
+            let currentRaw = tempReportPts[i] || "";
+            let currentLoc = currentRaw.includes(':') ? currentRaw.split(':')[0] : currentRaw;
+            let currentColors = currentRaw.includes(':') ? currentRaw.split(':')[1].split(',') : [];
+
+            const row = document.createElement('div');
+            row.className = "bg-gray-50/50 dark:bg-slate-900/50 p-2.5 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors";
+            
+            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-2 uppercase tracking-wide px-1">จุดเกิดที่ ${i+1}</div>`;
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-3 gap-2";
+            
+            Object.keys(mapIcons[curM]).forEach(enName => {
+                const btn = document.createElement('button');
+                const isSel = (currentLoc === enName);
+                
+                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white dark:bg-slate-800 dark:text-white shadow-sm transform scale-[1.03]' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
+                
+                let thName = enName;
+                const pointInfo = gData.mapsData[curM]?.points?.find(p => p.id === enName);
+                if (pointInfo) thName = pointInfo.name.th;
+                
+                btn.innerHTML = `
+                    <span class="text-2xl ${isSel?'':'opacity-60'} leading-none mb-1">${mapIcons[curM][enName]}</span>
+                    <span class="text-[10px] font-bold ${isSel?'text-indigo-700 dark:text-indigo-400':'text-gray-700 dark:text-gray-300'} leading-tight">${enName}</span>
+                    <span class="text-[9px] font-normal ${isSel?'text-indigo-500 dark:text-indigo-300':'text-gray-400 dark:text-gray-400'} leading-tight">${thName}</span>
+                `;
+                
+                btn.onclick = () => { 
+                    if (isSel) {
+                        tempReportPts[i] = "";
+                    } else {
+                        tempReportPts[i] = enName;
+                    }
+                    renderUserReportModal(); 
+                };
+                grid.appendChild(btn);
+            });
+            row.appendChild(grid); 
+
+            if (curM === 'hidden_temple' && currentLoc) {
+                const maxColors = (userReportingW === 4) ? 2 : 1;
+                
+                const colorSection = document.createElement('div');
+                colorSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between px-1";
+                
+                const label = document.createElement('div');
+                label.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">ออร่าสี:</span> <span class="text-[9px] text-gray-400">(สูงสุด ${maxColors})</span>`;
+                colorSection.appendChild(label);
+
+                const colorBtns = document.createElement('div');
+                colorBtns.className = "flex gap-2";
+
+                auraColors.forEach(c => {
+                    let isColorSel = currentColors.includes(c.id);
+                    let cBtn = document.createElement('button');
+                    
+                    cBtn.className = `w-7 h-7 rounded-full ${c.hexClass} transition-all border-2 ${isColorSel ? 'border-gray-800 dark:border-white scale-110 shadow-md ' + c.shadowClass : 'border-transparent opacity-60 hover:opacity-100'}`;
+                    
+                    if(isColorSel) {
+                        cBtn.innerHTML = '<i class="fa-solid fa-check text-white text-[10px]"></i>';
+                    }
+
+                    cBtn.onclick = () => {
+                        let newColors = [...currentColors];
+                        if (isColorSel) {
+                            newColors = newColors.filter(x => x !== c.id);
+                        } else {
+                            if (newColors.length >= maxColors && maxColors === 1) {
+                                newColors = [c.id];
+                            } else if (newColors.length < maxColors) {
+                                newColors.push(c.id);
+                            }
+                        }
+                        
+                        let newColorStr = newColors.length > 0 ? ":" + newColors.join(',') : "";
+                        tempReportPts[i] = currentLoc + newColorStr;
+                        renderUserReportModal();
+                    };
+                    colorBtns.appendChild(cBtn);
+                });
+                
+                colorSection.appendChild(colorBtns);
+                row.appendChild(colorSection);
+            }
+
+            body.appendChild(row);
+        }
+    }
+
+    async function submitUserReport() {
+        const targetW = userReportingW;
+        const targetS = userReportingS;
+
+        if (!targetW || !targetS) return;
+
+        const cleanedPts = tempReportPts.map(x => x ? x : "").filter(Boolean);
+        if (cleanedPts.length === 0) {
+            showToast('กรุณาเลือกจุดเกิดอย่างน้อย 1 จุดก่อนส่งรายงานครับ', 'error');
+            return;
+        }
+
+        const reportedStr = tempReportPts.join('|');
+        const currentDataStr = (gData.spawnData[targetW][targetS] || []).join('|');
+
+        if (reportedStr === currentDataStr) {
+            closeUserReportModal();
+            showToast('ข้อมูลจุดเกิดตรงกับปัจจุบัน ไม่ได้บันทึกเพิ่ม');
+            return;
+        }
+
+        const mapNameEn = gData.mapsData[curM]?.name?.en || curM;
+
+        const btnSubmit = document.getElementById('btn-submit-report');
+        if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> กำลังส่งข้อมูล...';
+
+        try {
+            const res = await apiCall('reportWaveData', targetW, targetS, reportedStr, mapNameEn);
+            closeUserReportModal();
+
+            if (res.status === 'success') {
+                if (!gData.reportCounts) gData.reportCounts = {};
+                
+                // 🌟 รีเฟรชข้อมูล reportCounts ล่าสุดจากเซิร์ฟเวอร์เพื่อให้ชัวร์ว่าอัปเดตตรง 100%
+                const mapRes = await apiCall('getWeeklyMapData');
+                if (mapRes.success && mapRes.reportCounts) {
+                    gData.reportCounts = mapRes.reportCounts;
+                } else if (res.totalReports !== undefined) {
+                    gData.reportCounts[`${targetW}_${targetS}`] = res.totalReports;
+                }
+
+                if (res.autoApproved) {
+                    showToast(`🎉 Wave ${targetW}.${targetS} รายงานตรงกัน 2 คน อัปเดตข้อมูลสำเร็จ!`);
+                    if (res.points) {
+                        gData.spawnData[targetW][targetS] = res.points.split('|');
+                    }
+                } else {
+                    showToast(`📩 บันทึกรายงาน Wave ${targetW}.${targetS} สำเร็จแล้ว`);
+                }
+                render();
+            } else if (res.status === 'no_change') {
+                showToast(res.message || 'ข้อมูลตรงกับปัจจุบัน ไม่ได้บันทึกเพิ่ม');
+            } else {
+                showToast(res.message || 'ไม่สามารถส่งรายงานได้', 'error');
+            }
+        } catch(e) {
+            closeUserReportModal();
+            showToast(e.toString(), 'error');
+        } finally {
+            if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i> <span class="text-sm">ส่งข้อมูลรายงาน (Submit Report)</span>';
+        }
+    }
+
+    // 📋 Admin Log Review Logic
+    async function openAdminReportLogsModal(targetW = null, targetS = null) {
+        if (!isAdmin) return;
+        const body = document.getElementById('admin-report-logs-body');
+        const titleEl = document.getElementById('admin-report-title');
+        
+        if (titleEl) {
+            if (targetW && targetS) {
+                titleEl.innerHTML = `📋 Log การรายงาน - <span class="text-indigo-600 dark:text-indigo-400 font-bold">Wave ${targetW}.${targetS}</span>`;
+            } else {
+                titleEl.innerHTML = `📋 Log ข้อมูลที่ผู้ใช้รายงานทั้งหมด`;
+            }
+        }
+
+        body.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i><br/><span class="text-xs font-bold">กำลังโหลดข้อมูล Log การรายงาน...</span></div>';
+        document.getElementById('admin-report-modal').classList.remove('hidden');
+
+        try {
+            const res = await apiCall('getReportLogs');
+            if (!res.success) {
+                body.innerHTML = `<div class="text-center py-6 text-red-500 font-bold text-xs">Error: ${res.error}</div>`;
+                return;
+            }
+
+            body.innerHTML = "";
+            let hasLogs = false;
+
+            const waveList = targetW ? [parseInt(targetW, 10)] : [1,2,3,4];
+            const subList = targetS ? [parseInt(targetS, 10)] : [1,2,3];
+
+            waveList.forEach(w => {
+                subList.forEach(s => {
+                    const key = `${w}_${s}`;
+                    const reports = res.logs[key] || {};
+                    const reportKeys = Object.keys(reports);
+
+                    if (reportKeys.length > 0) {
+                        hasLogs = true;
+                        const card = document.createElement('div');
+                        card.className = "bg-gray-50 dark:bg-slate-900 p-3 rounded-2xl border border-gray-100 dark:border-slate-700 flex flex-col gap-2";
+                        
+                        let cardHtml = `
+                            <div class="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-700">
+                                <span class="font-black text-sm text-indigo-600 dark:text-indigo-400">Wave ${w}.${s}</span>
+                                <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">${reportKeys.length} รายการ</span>
+                            </div>
+                        `;
+
+                        reportKeys.forEach(ptsStr => {
+                            const count = reports[ptsStr];
+                            const ptsArr = ptsStr.split('|').filter(Boolean);
+                            
+                            let ptsDisplay = ptsArr.map(p => {
+                                let loc = p.includes(':') ? p.split(':')[0] : p;
+                                let colors = p.includes(':') ? p.split(':')[1].split(',') : [];
+                                let icon = mapIcons[curM][loc] || loc;
+                                let colorDots = colors.map(c => {
+                                    let cObj = auraColors.find(ac => ac.id === c);
+                                    return cObj ? `<span class="inline-block w-2.5 h-2.5 rounded-full ${cObj.hexClass} ml-0.5 shadow-sm"></span>` : '';
+                                }).join('');
+                                return `<span class="inline-flex items-center gap-1 font-bold text-xs bg-white dark:bg-slate-800 px-2 py-1 rounded-lg border border-gray-200 dark:border-slate-700">${icon} ${loc}${colorDots}</span>`;
+                            }).join(' ');
+
+                            cardHtml += `
+                                <div class="flex items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700/60">
+                                    <div class="flex flex-col gap-1">
+                                        <div class="flex flex-wrap gap-1">${ptsDisplay}</div>
+                                        <span class="text-[10px] text-gray-400 dark:text-gray-400 font-medium">มีรายงานตรงกัน: <b class="text-indigo-600 dark:text-indigo-400 font-bold">${count} คน</b></span>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                                        <button onclick="deleteReportLogAction(${w}, ${s}, '${ptsStr.replace(/'/g, "\\'")}')" title="ลบรายการรายงานนี้ทิ้ง" class="px-2.5 py-1.5 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-500/30 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1">
+                                            <i class="fa-solid fa-trash-can text-xs"></i> ลบทิ้ง
+                                        </button>
+                                        <button onclick="approveReportLog(${w}, ${s}, '${ptsStr.replace(/'/g, "\\'")}')" title="อนุมัติข้อมูลนี้ลงแถว 16" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-md flex items-center gap-1">
+                                            <i class="fa-solid fa-check text-xs"></i> อนุมัติ
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        card.innerHTML = cardHtml;
+                        body.appendChild(card);
+                    }
+                });
+            });
+
+            if (!hasLogs) {
+                body.innerHTML = `
+                    <div class="text-center py-10 text-gray-400 dark:text-gray-500">
+                        <i class="fa-solid fa-inbox text-4xl mb-3 opacity-40"></i>
+                        <p class="text-xs font-bold">${targetW ? `ยังไม่มีรายงานสำหรับ Wave ${targetW}.${targetS}` : 'ยังไม่มีรายงานจากผู้ใช้ในรอบสัปดาห์นี้'}</p>
+                    </div>
+                `;
+            }
+        } catch(e) {
+            body.innerHTML = `<div class="text-center py-6 text-red-500 font-bold text-xs">Error: ${e.toString()}</div>`;
+        }
+    }
+
+    function closeAdminReportLogsModal() {
+        document.getElementById('admin-report-modal').classList.add('hidden');
+    }
+
+    function deleteReportLogAction(w, s, pointsStr) {
+        if (!adminPass) {
+            openLogin();
+            return;
+        }
+        showModal(
+            'warning',
+            'ลบรายการรายงาน?',
+            `คุณต้องการลบข้อมูลรายงานนี้ใน Wave ${w}.${s} ทิ้งหรือไม่?`,
+            async () => {
+                try {
+                    const res = await apiCall('deleteReportLog', w, s, pointsStr, adminPass);
+                    if (res.status === 'success') {
+                        showToast(`🗑️ ลบรายงานใน Wave ${w}.${s} เรียบร้อยแล้ว`);
+                        openAdminReportLogsModal(w, s);
+                        const mapRes = await apiCall('getWeeklyMapData');
+                        if (mapRes.success && mapRes.reportCounts) {
+                            gData.reportCounts = mapRes.reportCounts;
+                            render();
+                        }
+                    } else {
+                        showModal('error', 'เกิดข้อผิดพลาด', res.message || 'ไม่สามารถลบรายงานได้');
+                    }
+                } catch(e) {
+                    showModal('error', 'เกิดข้อผิดพลาด', e.toString());
+                }
+            }
+        );
+    }
+
+    function approveReportLog(w, s, pointsStr) {
+        if (!adminPass) {
+            openLogin();
+            return;
+        }
+        showModal(
+            'warning',
+            'ยืนยันข้อมูลรายงาน?',
+            `คุณต้องการอนุมัติและบันทึกข้อมูลรายงานนี้ลงใน Wave ${w}.${s} (แถวที่ 16) หรือไม่?<br/><br/><span class="text-[10px] text-amber-500 font-normal">*ข้อมูล Log รายงานของ Wave ${w}.${s} ทั้งหมดจะถูกลบทิ้งเมื่ออนุมัติ</span>`,
+            async () => {
+                try {
+                    const res = await apiCall('approveReportLog', w, s, pointsStr, adminPass);
+                    if (res.status === 'success') {
+                        showToast(`✅ อนุมัติข้อมูล Wave ${w}.${s} เรียบร้อยแล้ว`);
+                        gData.spawnData[w][s] = pointsStr ? pointsStr.split('|') : [];
+                        if (!gData.reportCounts) gData.reportCounts = {};
+                        gData.reportCounts[`${w}_${s}`] = 0;
+                        render();
+                        openAdminReportLogsModal(w, s);
+                    } else {
+                        showModal('error', 'เกิดข้อผิดพลาด', res.message || 'ไม่สามารถอนุมัติได้');
+                    }
+                } catch(e) {
+                    showModal('error', 'เกิดข้อผิดพลาด', e.toString());
+                }
+            }
+        );
+    }
+
     function clearData() { 
         showModal(
             'warning',
@@ -1174,7 +1576,34 @@
                     }
                 }
                 
-                html += `</div></div>`;
+                html += `</div>`;
+                const rKey = `${w}_${s}`;
+                const rCount = (gData.reportCounts && gData.reportCounts[rKey]) ? gData.reportCounts[rKey] : 0;
+                
+                if (isAdmin) {
+                    // 🌟 ถ้าเป็น Admin และมีรายงานส่งเข้ามาใน Wave นี้ (rCount > 0) ให้แสดงปุ่ม/Badge รายงานเฉพาะ Wave นั้น
+                    if (rCount > 0) {
+                        html += `
+                            <button onclick="event.stopPropagation(); openAdminReportLogsModal(${w}, ${s})" title="ดูรายงาน Wave ${w}.${s} (${rCount} รายงาน)" class="ml-1 px-2.5 py-1.5 flex items-center gap-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 dark:bg-amber-400/20 dark:hover:bg-amber-400/30 text-amber-600 dark:text-amber-300 text-xs font-bold border border-amber-300/60 dark:border-amber-500/40 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 min-w-[16px] h-4 rounded-full inline-flex items-center justify-center shadow-sm animate-pulse">${rCount}</span>
+                                <i class="fa-solid fa-clipboard-list text-amber-500 dark:text-amber-400 text-xs"></i>
+                                <span class="text-[10px] hidden sm:inline font-bold">รายงาน</span>
+                            </button>
+                        `;
+                    }
+                } else {
+                    // 🌟 ถ้าเป็นผู้ใช้ทั่วไป: แสดงปุ่ม "แจ้งจุด"
+                    const badgeHtml = rCount > 0 ? `<span class="bg-rose-500 text-white text-[9px] font-black px-1.5 min-w-[16px] h-4 rounded-full inline-flex items-center justify-center shadow-sm animate-pulse">${rCount}</span>` : '';
+                    
+                    html += `
+                        <button onclick="event.stopPropagation(); openUserReport(${w}, ${s})" title="แจ้ง/ส่งข้อมูลจุดเกิด${rCount > 0 ? ` (${rCount} รายงาน)` : ''}" class="ml-1 px-2.5 py-1.5 flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 dark:from-indigo-400/15 dark:to-violet-400/15 text-indigo-600 dark:text-indigo-300 text-xs font-bold border border-indigo-200/60 dark:border-indigo-500/30 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                            ${badgeHtml}
+                            <i class="fa-solid fa-paper-plane text-indigo-500 dark:text-indigo-400 text-xs"></i>
+                            <span class="text-[10px] hidden sm:inline font-bold">แจ้งจุด</span>
+                        </button>
+                    `;
+                }
+                html += `</div>`;
             });
             con.innerHTML += html + `</div></div>`;
         });
