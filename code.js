@@ -15,14 +15,10 @@ function doPost(e) {
       result = { ok: checkAdminPassword(args[0]) };
     } else if (action === 'saveWeeklyMapData') {
       result = saveWeeklyMapData(args[0], args[1], args[2], args[3]);
-    } else if (action === 'reportWaveData') {
-      result = reportWaveData(args[0], args[1], args[2], args[3]);
-    } else if (action === 'getReportLogs') {
-      result = getReportLogs();
-    } else if (action === 'approveReportLog') {
-      result = approveReportLog(args[0], args[1], args[2], args[3]);
-    } else if (action === 'deleteReportLog') {
-      result = deleteReportLog(args[0], args[1], args[2], args[3]);
+    } else if (action === 'saveWaveData') {
+      result = saveWaveData(args[0], args[1], args[2], args[3]);
+    } else if (action === 'getLatestSpawnData') {
+      result = getLatestSpawnData();
     } else {
       result = { error: 'Action not found' };
     }
@@ -167,36 +163,16 @@ function getWeeklyMapData() {
         });
       });
     } else {
-      // 🧹 สัปดาห์ใหม่! ล้างข้อมูล Log รายงานทั้งหมดตั้งแต่แถวที่ 17 เป็นต้นไป
+      // 🧹 สัปดาห์ใหม่! อัปเดตวันที่แถว 16 เป็นสัปดาห์ใหม่ และล้างจุดเกิดเก่าทิ้ง (รอแอดมินตั้งด่านใหม่)
       try {
-        const lastRow = sheet.getLastRow();
-        if (lastRow >= 17) {
-          sheet.getRange(17, 1, lastRow - 16, 14).clearContent();
-        }
+        sheet.getRange("A16").setValue(currentWeekDate);
+        sheet.getRange("B16:N16").clearContent();
       } catch(e) {}
-    }
-
-    // 3. อ่านจำนวนการรายงานของผู้ใช้ในแต่ละ SubWave
-    let reportCounts = {};
-    const maxRow = sheet.getLastRow();
-    if (maxRow >= 17) {
-      const reportRows = sheet.getRange(17, 1, maxRow - 16, 14).getValues();
-      [1,2,3,4].forEach(w => {
-        [1,2,3].forEach(s => {
-          const cIdx = getSubWaveColIndex(w, s) - 1;
-          const key = `${w}_${s}`;
-          let c = 0;
-          reportRows.forEach(row => {
-            if (row[cIdx] && row[cIdx].toString().trim() !== "") c++;
-          });
-          reportCounts[key] = c;
-        });
-      });
     }
 
     // ถ้าไม่ใช่ข้อมูลของสัปดาห์นี้ ระบบจะส่ง spawnData ที่เคลียร์ว่างเปล่ากลับไปให้ (รอให้แอดมินเซฟเป็นข้อมูลใหม่)
     const visitCount = getAndIncrementVisitCount(sheet);
-    return { success: true, mapDate, currentMapId: logMapId, spawnData, mapsData, isNewWeek: !isDataMatchCurrentWeek, visitCount, reportCounts };
+    return { success: true, mapDate, currentMapId: logMapId, spawnData, mapsData, isNewWeek: !isDataMatchCurrentWeek, visitCount };
 
   } catch (e) {
     return { success: false, error: e.message };
@@ -243,165 +219,82 @@ function getSubWaveColIndex(w, s) {
   return 3 + ((wave - 1) * 3) + (subwave - 1);
 }
 
-// 📢 ผู้ใช้รายงานจุดเกิด Wave ที่ไม่ถูกต้อง
-function reportWaveData(wave, subwave, reportedPointsStr, mapNameEn) {
+// 📖 อ่านข้อมูลบันทึกล่าสุด (แถวที่ 16) แบบเบา ๆ ไม่นับจำนวนผู้เข้าชม
+function getLatestSpawnData() {
   try {
     const sheet = getOurSheet();
     const currentWeekDate = getCurrentResetDateStr();
-    const colIdx = getSubWaveColIndex(wave, subwave);
-    
-    // 🌟 ตรวจสอบว่าข้อมูลที่แจ้งเข้ามา ตรงกับข้อมูลปัจจุบันในระบบ (แถว 16) หรือไม่
-    const currentActiveData = sheet.getRange(16, colIdx).getDisplayValue().trim();
-    if (reportedPointsStr.trim() === currentActiveData) {
-      return { status: "no_change", message: "ข้อมูลที่แจ้งเข้ามาตรงกับข้อมูลปัจจุบันในระบบแล้ว จึงไม่มีการบันทึกเพิ่ม" };
-    }
 
-    const lastRow = sheet.getLastRow();
-    let targetRow = 17;
-    
-    if (lastRow >= 17) {
-      const colValues = sheet.getRange(17, colIdx, lastRow - 16, 1).getValues();
-      let foundEmpty = false;
-      for (let i = 0; i < colValues.length; i++) {
-        if (!colValues[i][0] || colValues[i][0].toString().trim() === "") {
-          targetRow = 17 + i;
-          foundEmpty = true;
-          break;
-        }
-      }
-      if (!foundEmpty) {
-        targetRow = lastRow + 1;
-      }
-    }
+    const logRange = sheet.getRange("A16:N16");
+    const displays = logRange.getDisplayValues()[0];
+    const rowDate = displays[0] ? displays[0].trim() : "";
+    const mapNameEn = displays[1] ? displays[1].trim() : "";
 
-    // บันทึกข้อมูลที่รายงานลงในคอลัมน์ของ Wave นั้น
-    sheet.getRange(targetRow, colIdx).setValue(reportedPointsStr);
-    
-    // ตั้งค่า Date และ MapName ในแถวการรายงานหากยังว่าง
-    if (!sheet.getRange(targetRow, 1).getValue()) sheet.getRange(targetRow, 1).setValue(currentWeekDate);
-    if (!sheet.getRange(targetRow, 2).getValue()) sheet.getRange(targetRow, 2).setValue(mapNameEn || "");
+    let spawnData = { 1:{1:[],2:[],3:[]}, 2:{1:[],2:[],3:[]}, 3:{1:[],2:[],3:[]}, 4:{1:[],2:[],3:[]} };
+    const isCurrentWeek = (rowDate === currentWeekDate);
 
-    // 🌟 ตรวจสอบ Consensus (หากรายงานตรงกัน >= 2 คน อัปเดตลงแถว 16 ทันที)
-    const newLastRow = Math.max(17, sheet.getLastRow());
-    const allReports = sheet.getRange(17, colIdx, newLastRow - 16, 1).getValues();
-    
-    let freqMap = {};
-    let consensusPoints = "";
-    let autoApproved = false;
-
-    let totalReports = 0;
-    for (let i = 0; i < allReports.length; i++) {
-      const val = allReports[i][0] ? allReports[i][0].toString().trim() : "";
-      if (val) {
-        totalReports++;
-        freqMap[val] = (freqMap[val] || 0) + 1;
-        if (freqMap[val] >= 2) {
-          consensusPoints = val;
-          autoApproved = true;
-          break;
-        }
-      }
-    }
-
-    if (autoApproved && consensusPoints !== "") {
-      // อัปเดตลงแถว 16 โดยตรง
-      sheet.getRange(16, colIdx).setValue(consensusPoints);
-      // หากแถว 16 คอลัมน์ A/B ยังไม่มี ให้ใส่วันที่และชื่อแมพด้วย
-      if (!sheet.getRange(16, 1).getValue()) sheet.getRange(16, 1).setValue(currentWeekDate);
-      if (!sheet.getRange(16, 2).getValue()) sheet.getRange(16, 2).setValue(mapNameEn || "");
-
-      // 🧹 ลบ Log การรายงานของ Wave นี้ทั้งหมดหลังจากเกิด Auto-Approve
-      if (newLastRow >= 17) {
-        sheet.getRange(17, colIdx, newLastRow - 16, 1).clearContent();
-      }
-      totalReports = 0;
-    }
-
-    return { status: "success", autoApproved, points: consensusPoints, totalReports };
-  } catch (e) {
-    return { status: "error", message: e.message };
-  }
-}
-
-// 📋 ดึงรายการ Log รายงานสำหรับ Admin
-function getReportLogs() {
-  try {
-    const sheet = getOurSheet();
-    const lastRow = sheet.getLastRow();
-    let logs = {};
-
-    if (lastRow >= 17) {
-      const reportRange = sheet.getRange(17, 1, lastRow - 16, 14).getValues();
+    if (isCurrentWeek) {
+      let colIdx = 2;
       [1,2,3,4].forEach(w => {
         [1,2,3].forEach(s => {
-          const colIdx = getSubWaveColIndex(w, s) - 1; // 0-indexed array
-          const key = `${w}_${s}`;
-          logs[key] = {};
-
-          reportRange.forEach(row => {
-            const val = row[colIdx] ? row[colIdx].toString().trim() : "";
-            if (val) {
-              logs[key][val] = (logs[key][val] || 0) + 1;
-            }
-          });
+          const cellData = displays[colIdx] ? displays[colIdx].toString().trim() : "";
+          spawnData[w][s] = cellData ? cellData.split('|').filter(x => x) : [];
+          colIdx++;
         });
       });
     }
 
-    return { success: true, logs };
+    return { success: true, mapDate: rowDate, mapNameEn, spawnData, isCurrentWeek };
   } catch (e) {
     return { success: false, error: e.message };
   }
 }
 
-// ✅ Admin ยืนยันข้อมูลรายงาน บันทึกลงแถว 16 และลบ Log ของ Wave นั้นทั้งหมด
-function approveReportLog(wave, subwave, approvedPointsStr, pass) {
-  if (!checkAdminPassword(pass)) return { status: "error", message: "รหัสผ่านไม่ถูกต้อง / Incorrect Password!" };
-  
+// ✏️ ผู้เล่นทุกคนช่วยกันบันทึกจุดเกิดของแต่ละ Wave ลงข้อมูลหลัก (แถวที่ 16) ได้ทันที
+function saveWaveData(wave, subwave, pointsStr, mapNameEn) {
+  const lock = LockService.getScriptLock();
   try {
+    // กันการเขียนชนกันเมื่อผู้เล่นหลายคนบันทึกพร้อมกัน
+    if (!lock.tryLock(20000)) {
+      return { status: "error", message: "ระบบกำลังบันทึกข้อมูลของผู้เล่นคนอื่นอยู่ กรุณาลองใหม่อีกครั้ง / Busy, please try again." };
+    }
+
     const sheet = getOurSheet();
     const currentWeekDate = getCurrentResetDateStr();
     const colIdx = getSubWaveColIndex(wave, subwave);
 
-    // 1. บันทึกลงแถว 16
-    sheet.getRange(16, colIdx).setValue(approvedPointsStr);
-    if (!sheet.getRange(16, 1).getValue()) sheet.getRange(16, 1).setValue(currentWeekDate);
+    const headerVals = sheet.getRange("A16:B16").getDisplayValues()[0];
+    const rowDate = headerVals[0] ? headerVals[0].trim() : "";
+    const rowMapName = headerVals[1] ? headerVals[1].trim() : "";
 
-    // 2. 🧹 ลบ Log การรายงานของ Wave นี้ทั้งหมดตั้งแต่แถวที่ 17 เป็นต้นไป
-    const maxRow = sheet.getLastRow();
-    if (maxRow >= 17) {
-      sheet.getRange(17, colIdx, maxRow - 16, 1).clearContent();
+    // 1. ต้องมีด่านของสัปดาห์นี้อยู่ก่อน (แอดมินเป็นผู้ตั้งด่านใหม่)
+    if (rowDate !== currentWeekDate || !rowMapName) {
+      return {
+        status: "error",
+        code: "no_map",
+        message: "ยังไม่มีข้อมูลด่านของสัปดาห์นี้ กรุณารอแอดมินบันทึกด่านใหม่ก่อน / Waiting for admin to set this week's map."
+      };
     }
 
-    return { status: "success" };
-  } catch (e) {
-    return { status: "error", message: e.message };
-  }
-}
-
-// 🗑️ Admin ลบข้อมูลรายงานของ Wave นั้น (กรณีผู้ใช้ส่งเข้ามาผิด)
-function deleteReportLog(wave, subwave, reportedPointsStr, pass) {
-  if (!checkAdminPassword(pass)) return { status: "error", message: "รหัสผ่านไม่ถูกต้อง / Incorrect Password!" };
-  
-  try {
-    const sheet = getOurSheet();
-    const colIdx = getSubWaveColIndex(wave, subwave);
-    const maxRow = sheet.getLastRow();
-    
-    if (maxRow >= 17) {
-      const colRange = sheet.getRange(17, colIdx, maxRow - 16, 1);
-      const values = colRange.getValues();
-      
-      for (let i = 0; i < values.length; i++) {
-        const val = values[i][0] ? values[i][0].toString().trim() : "";
-        if (val === reportedPointsStr.trim()) {
-          sheet.getRange(17 + i, colIdx).clearContent();
-        }
-      }
+    // 2. ต้องเป็นด่านเดียวกับที่บันทึกไว้ล่าสุดเท่านั้น
+    const sentMapName = mapNameEn ? mapNameEn.toString().trim() : "";
+    if (sentMapName && sentMapName.toLowerCase() !== rowMapName.toLowerCase()) {
+      return {
+        status: "error",
+        code: "map_mismatch",
+        currentMapName: rowMapName,
+        message: "ด่านปัจจุบันถูกเปลี่ยนเป็น " + rowMapName + " แล้ว ระบบจะรีเฟรชข้อมูลล่าสุดให้ / Map changed, refreshing latest data."
+      };
     }
 
-    return { status: "success" };
+    sheet.getRange(16, colIdx).setValue(pointsStr || "");
+    SpreadsheetApp.flush();
+
+    const latest = getLatestSpawnData();
+    return { status: "success", latest };
   } catch (e) {
     return { status: "error", message: e.message };
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
   }
 }

@@ -2,7 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GOT Nightmare">
     <title>GOT : Nightmare Survival Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -32,20 +36,37 @@
         html.dark body {
             background-color: #090D16;
         }
-        #app { 
-            width: 100%; 
-            max-width: 550px; 
-            height: 100%; 
+        #app {
+            width: 100%;
+            max-width: 550px;
+            height: 100%;
             max-height: 100vh;
             max-height: -webkit-fill-available;
-            max-height: 100dvh; 
-            display: flex; 
-            flex-direction: column; 
-            background-color: #F4F4F5; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.15); 
+            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background-color: #F4F4F5;
+            box-shadow: 0 0 40px rgba(0,0,0,0.15);
             position: relative;
             overflow: hidden;
+            padding-top: env(safe-area-inset-top);
             transition: background-color 0.3s ease;
+        }
+        /* 📱 iPad / Tablet : ขยายเต็มจอ ไม่บีบเหลือความกว้างมือถือ */
+        @media (min-width: 700px) {
+            #app { max-width: 900px; }
+            .wave-icon { font-size: 42px !important; }
+        }
+        @media (min-width: 1024px) {
+            #app { max-width: 1100px; }
+        }
+        /* โหมดเต็มจอ (Fullscreen API) ให้กินพื้นที่ทั้งหมดของจอ iPad */
+        #app:fullscreen, #app:-webkit-full-screen {
+            max-width: 100%;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            border-radius: 0;
         }
         html.dark #app {
             background-color: #0F172A;
@@ -81,6 +102,7 @@
             </div>
         </div>
         <div id="header-buttons" class="flex gap-2 items-center relative z-50">
+            <button onclick="toggleFullscreen()" id="btn-fullscreen" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Fullscreen (เต็มจอ)"><i class="fa-solid fa-expand"></i></button>
             <button onclick="toggleVoice()" id="btn-voice" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Toggle Voice Announcement"><i class="fa-solid fa-volume-xmark"></i></button>
             <button onclick="toggleMenu(event)" id="btn-menu" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-white border border-white/10" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 
@@ -170,7 +192,6 @@
     <div id="admin-bar" class="hidden absolute bottom-0 left-0 w-full bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 p-2.5 flex justify-between items-center shadow-[0_-10px_30px_rgba(0,0,0,0.05)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-40 transition-colors" style="padding-bottom: max(0.625rem, env(safe-area-inset-bottom));">
         <button id="btn-clear" onclick="clearData()" class="text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 font-bold text-[11px] px-3 py-2 rounded-xl transition flex flex-col items-center leading-none"><i class="fa-solid fa-trash-can mb-1"></i> Clear (ล้าง)</button>
         <div class="flex gap-2">
-            <button id="btn-logs" onclick="openAdminReportLogsModal()" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] px-3 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-clipboard-list mb-1"></i> Logs (รายงาน)</button>
             <button id="btn-save" onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-cloud-arrow-up mb-1"></i> Save (บันทึก)</button>
             <button id="btn-exit" onclick="exitAdmin()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold text-[11px] px-4 py-2 rounded-xl shadow-md transition flex flex-col items-center leading-none"><i class="fa-solid fa-xmark mb-1"></i> Exit (ปิด)</button>
         </div>
@@ -334,52 +355,22 @@
     <div id="edit-modal" onclick="if(event.target===this) closeEdit()" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
         <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 82vh; max-height: 82dvh;">
             <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
-                <h3 id="modal-title" class="font-black text-lg text-gray-800 dark:text-white">Edit Wave</h3>
+                <div>
+                    <h3 id="modal-title" class="font-black text-lg text-gray-800 dark:text-white">Edit Wave</h3>
+                    <p id="modal-subtitle" class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Everyone can help record spawn points.<br/><span class="text-[10px] font-normal opacity-80">(ผู้เล่นทุกคนช่วยกันบันทึกจุดเกิดได้)</span></p>
+                </div>
                 <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
             </div>
             <div id="modal-body" class="flex flex-col gap-4 p-5 overflow-y-auto flex-1"></div>
             <div class="bg-white dark:bg-slate-800 px-5 pt-3 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
-                <button onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg dark:shadow-none transition flex flex-col items-center">
-                    <span class="text-sm">Update Wave</span>
-                    <span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้</span>
+                <button id="btn-confirm-edit" onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg dark:shadow-none transition flex flex-col items-center">
+                    <span class="text-sm">Save Wave</span>
+                    <span class="text-[10px] font-normal opacity-80">บันทึกเวฟนี้</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- User Wave Report Modal -->
-    <div id="user-report-modal" onclick="if(event.target===this) closeUserReportModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
-        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh;">
-            <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
-                <div>
-                    <h3 id="user-report-title" class="font-black text-lg text-gray-800 dark:text-white">Report Spawn Location (แจ้ง/ส่งข้อมูลจุดเกิด)</h3>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Select correct spawn point & aura color for this wave.<br/><span class="text-[10px] font-normal opacity-80">(เลือกจุดเกิดและออร่าสีที่ถูกต้องของ Wave นี้)</span></p>
-                </div>
-                <button onclick="closeUserReportModal()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
-            </div>
-            <div id="user-report-body" class="flex flex-col gap-4 p-5 overflow-y-auto flex-1"></div>
-            <div class="bg-white dark:bg-slate-800 px-5 pt-3 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
-                <button id="btn-submit-report" onclick="submitUserReport()" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-paper-plane text-xs"></i>
-                    <span class="text-sm">Submit Report (ส่งข้อมูลรายงาน)</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Report Logs Modal -->
-    <div id="admin-report-modal" onclick="if(event.target===this) closeAdminReportLogsModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
-        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-md shadow-2xl relative overflow-hidden flex flex-col my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh;">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-slate-700">
-                <div>
-                    <h3 id="admin-report-title" class="font-black text-lg text-gray-800 dark:text-white">📋 User Report Logs (Log ข้อมูลที่ผู้ใช้รายงาน)</h3>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Review and approve to save data.<br/><span class="text-[10px] font-normal opacity-80">(ตรวจสอบและกดอนุมัติเพื่อบันทึกลงแถวที่ 16)</span></p>
-                </div>
-                <button onclick="closeAdminReportLogsModal()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
-            </div>
-            <div id="admin-report-logs-body" class="flex flex-col gap-3 overflow-y-auto flex-1 pr-1"></div>
-        </div>
-    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="hidden absolute top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/95 backdrop-blur text-white px-5 py-2.5 rounded-full text-sm font-bold z-[100] shadow-xl flex items-center gap-2 text-center">
@@ -455,11 +446,15 @@
             }
             gData = res;
             const savedMap = localStorage.getItem('got_curMap');
-            if (savedMap && gData.mapsData && gData.mapsData[savedMap]) {
+            // 🌟 ยึดด่านตามบันทึกล่าสุดในระบบเสมอ (ผู้เล่นทุกคนช่วยกันบันทึกด่านเดียวกัน)
+            if (!res.isNewWeek && res.currentMapId && gData.mapsData[res.currentMapId]) {
+                curM = res.currentMapId;
+            } else if (savedMap && gData.mapsData && gData.mapsData[savedMap]) {
                 curM = savedMap;
             } else {
                 curM = res.currentMapId || 'hidden_temple';
             }
+            localStorage.setItem('got_curMap', curM);
             originalMapId = curM; 
             mapDate = res.mapDate || "";
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -476,6 +471,15 @@
             document.getElementById('loading-text').innerHTML = "Error: " + err.toString(); 
         }
     };
+
+    // 🔄 กลับเข้าหน้าจออีกครั้ง ดึงบันทึกล่าสุดมาอัปเดตให้ (เผื่อมีผู้เล่นคนอื่นบันทึกไปแล้ว)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && !isAdmin && gData.mapsData) {
+            const editModal = document.getElementById('edit-modal');
+            if (editModal && !editModal.classList.contains('hidden')) return;
+            refreshLatestData();
+        }
+    });
 
     function toggleMenu(e) {
         if (e) e.stopPropagation();
@@ -551,13 +555,56 @@
         if (html.classList.contains('dark')) {
             html.classList.remove('dark');
             localStorage.setItem('got_theme', 'light');
-            document.getElementById('btn-theme').innerHTML = '<i class="fa-solid fa-moon"></i>';
         } else {
             html.classList.add('dark');
             localStorage.setItem('got_theme', 'dark');
-            document.getElementById('btn-theme').innerHTML = '<i class="fa-solid fa-sun text-amber-400"></i>';
+        }
+        updateThemeUI();
+    }
+
+    function updateThemeUI() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const menuThemeIcon = document.getElementById('menu-theme-icon');
+        const menuThemeBadge = document.getElementById('menu-theme-badge');
+        if (menuThemeIcon) {
+            menuThemeIcon.className = isDark ? 'fa-solid fa-sun text-amber-400 w-4 text-center' : 'fa-solid fa-moon text-amber-500 w-4 text-center';
+        }
+        if (menuThemeBadge) {
+            menuThemeBadge.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         }
     }
+
+    // 🖥️ โหมดเต็มจอ (รองรับ iPad / Desktop)
+    function toggleFullscreen() {
+        const el = document.getElementById('app');
+        const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+        try {
+            if (!fsEl) {
+                if (el.requestFullscreen) el.requestFullscreen();
+                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+                else {
+                    showToast('Fullscreen not supported. Add to Home Screen for full screen. (อุปกรณ์นี้ไม่รองรับเต็มจอ ให้ใช้ "เพิ่มไปยังหน้าจอโฮม" แทน)', 'error');
+                    return;
+                }
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            }
+        } catch(e) {
+            showToast('Fullscreen error: ' + e.toString(), 'error');
+        }
+    }
+
+    function updateFullscreenButton() {
+        const btn = document.getElementById('btn-fullscreen');
+        if (!btn) return;
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        btn.innerHTML = isFs ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
+        btn.title = isFs ? 'Exit Fullscreen (ออกจากเต็มจอ)' : 'Fullscreen (เต็มจอ)';
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
 
     function downloadQR() {
         const canvas = document.getElementById('qr-canvas');
@@ -606,9 +653,7 @@
             { id: 'qr-modal', closeFn: typeof closeQRModal === 'function' ? closeQRModal : null },
             { id: 'login-modal', closeFn: typeof closeLogin === 'function' ? closeLogin : null },
             { id: 'dynamic-modal', closeFn: typeof closeDynamicModal === 'function' ? closeDynamicModal : null },
-            { id: 'edit-modal', closeFn: typeof closeEdit === 'function' ? closeEdit : null },
-            { id: 'user-report-modal', closeFn: typeof closeUserReportModal === 'function' ? closeUserReportModal : null },
-            { id: 'admin-report-modal', closeFn: typeof closeAdminReportLogsModal === 'function' ? closeAdminReportLogsModal : null }
+            { id: 'edit-modal', closeFn: typeof closeEdit === 'function' ? closeEdit : null }
         ];
         modals.forEach(m => {
             const el = document.getElementById(m.id);
@@ -906,18 +951,87 @@
         }
     }
 
-    function openEdit(w, s) {
-        if (!isAdmin) return;
-        editingW = w; 
+    // 🔎 หา map id จากชื่อภาษาอังกฤษที่บันทึกไว้ในชีท
+    function findMapIdByName(nameEn) {
+        if (!nameEn || !gData.mapsData) return null;
+        const n = nameEn.toString().trim().toLowerCase();
+        for (let id in gData.mapsData) {
+            if (gData.mapsData[id].name.en.trim().toLowerCase() === n) return id;
+        }
+        return null;
+    }
+
+    // 🔄 ดึง "บันทึกล่าสุด" (แถวที่ 16) มาอัปเดตหน้าจอ ใช้ก่อนแก้ไขและหลังบันทึกเสมอ
+    async function refreshLatestData() {
+        try {
+            const res = await apiCall('getLatestSpawnData');
+            if (!res || !res.success) return false;
+
+            if (res.isCurrentWeek) {
+                gData.spawnData = res.spawnData;
+                mapDate = res.mapDate || mapDate;
+                gData.isNewWeek = false;
+
+                const mid = findMapIdByName(res.mapNameEn);
+                if (mid) {
+                    gData.currentMapId = mid;
+                    if (!isAdmin && mid !== curM) {
+                        curM = mid;
+                        localStorage.setItem('got_curMap', curM);
+                    }
+                }
+            }
+            render();
+            return true;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    // ✏️ เปิดหน้าต่างแก้ไข/บันทึกเวฟ (ผู้เล่นทุกคนใช้ได้ ไม่ต้องเป็นแอดมิน)
+    async function openWaveEdit(w, s) {
+        if (!isAdmin && gData.isNewWeek) {
+            showModal('error', 'Map Not Set (ยังไม่มีข้อมูลด่าน)', 'Waiting for the admin to set this week\'s map.<br/><br/><span class="text-[10px] text-gray-400">(กรุณารอแอดมินบันทึกด่านของสัปดาห์นี้ก่อน จึงจะช่วยกันบันทึกจุดเกิดได้)</span>');
+            return;
+        }
+
+        editingW = w;
         editingS = s;
         // คัดลอกข้อมูลปัจจุบัน (ซึ่งอาจรวมเรื่องสีไว้ด้วย)
         tempPts = [...(gData.spawnData[w][s] || [])];
         renderEditModal();
         document.getElementById('edit-modal').classList.remove('hidden');
+
+        // 🌟 ผู้เล่นทั่วไป: โหลดข้อมูลจากบันทึกล่าสุดมาตั้งต้นเสมอ (เผื่อมีคนอื่นบันทึกไปก่อนหน้า)
+        if (!isAdmin) {
+            const ok = await refreshLatestData();
+            if (ok && editingW === w && editingS === s) {
+                tempPts = [...(gData.spawnData[w][s] || [])];
+                renderEditModal();
+            }
+        }
     }
 
+    // เผื่อโค้ดเก่าเรียกใช้ชื่อเดิม
+    function openEdit(w, s) { openWaveEdit(w, s); }
+
     function renderEditModal() {
-        document.getElementById('modal-title').innerHTML = `Edit Wave <span class="text-sm font-medium text-gray-500">(แก้ไขเวฟ)</span> ${editingW}.${editingS}`;
+        document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-pencil text-indigo-500 text-sm mr-1"></i> Wave ${editingW}.${editingS} <span class="text-sm font-medium text-gray-500">(บันทึกเวฟ)</span>`;
+
+        const subtitleEl = document.getElementById('modal-subtitle');
+        if (subtitleEl) {
+            subtitleEl.innerHTML = isAdmin
+                ? 'Admin edit — press Save to store the whole map.<br/><span class="text-[10px] font-normal opacity-80">(แอดมินแก้ไข แล้วกดปุ่ม Save เพื่อบันทึกทั้งด่าน)</span>'
+                : 'Data loaded from the latest record. Saving updates it for everyone.<br/><span class="text-[10px] font-normal opacity-80">(ข้อมูลตั้งต้นจากบันทึกล่าสุด เมื่อบันทึกจะอัปเดตให้ผู้เล่นทุกคนทันที)</span>';
+        }
+
+        const confirmBtn = document.getElementById('btn-confirm-edit');
+        if (confirmBtn) {
+            confirmBtn.innerHTML = isAdmin
+                ? '<span class="text-sm">Update Wave</span><span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้ (ยังไม่บันทึกลงระบบ)</span>'
+                : '<span class="text-sm"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Save Wave</span><span class="text-[10px] font-normal opacity-80">บันทึกเวฟนี้ให้ทุกคน</span>';
+        }
+
         const body = document.getElementById('modal-body');
         body.innerHTML = "";
         const limit = (editingW === 4) ? 4 : 3;
@@ -1021,354 +1135,73 @@
         editingS = null;
     }
     
-    function confirmEdit() { 
+    async function confirmEdit() {
         const cleanedPts = tempPts.map(x => x ? x : "");
-        if(JSON.stringify(gData.spawnData[editingW][editingS]) !== JSON.stringify(cleanedPts)) {
-            hasUnsavedChanges = true;
-        }
-        gData.spawnData[editingW][editingS] = cleanedPts; 
-        closeEdit(); 
-        render(); 
-    }
+        const w = editingW, s = editingS;
+        if (!w || !s) return;
 
-    // 📢 User Reporting Logic
-    let userReportingW = null, userReportingS = null, tempReportPts = [];
-
-    function openUserReport(w, s) {
-        userReportingW = w;
-        userReportingS = s;
-        tempReportPts = [...(gData.spawnData[w][s] || [])];
-        renderUserReportModal();
-        document.getElementById('user-report-modal').classList.remove('hidden');
-    }
-
-    function closeUserReportModal() {
-        document.getElementById('user-report-modal').classList.add('hidden');
-        userReportingW = null;
-        userReportingS = null;
-    }
-
-    function renderUserReportModal() {
-        document.getElementById('user-report-title').innerHTML = `Report Spawn Location (แจ้ง/ส่งข้อมูลจุดเกิด) <span class="text-sm font-bold text-indigo-600 dark:text-indigo-400">Wave ${userReportingW}.${userReportingS}</span>`;
-        const body = document.getElementById('user-report-body');
-        body.innerHTML = "";
-        const limit = (userReportingW === 4) ? 4 : 3;
-        
-        for(let i=0; i<limit; i++) {
-            let currentRaw = tempReportPts[i] || "";
-            let currentLoc = currentRaw.includes(':') ? currentRaw.split(':')[0] : currentRaw;
-            let currentColors = currentRaw.includes(':') ? currentRaw.split(':')[1].split(',') : [];
-
-            const row = document.createElement('div');
-            row.className = "bg-gray-50/50 dark:bg-slate-900/50 p-2.5 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors";
-            
-            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-2 uppercase tracking-wide px-1">Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></div>`;
-            const grid = document.createElement('div');
-            grid.className = "grid grid-cols-3 gap-2";
-            
-            Object.keys(mapIcons[curM]).forEach(enName => {
-                const btn = document.createElement('button');
-                const isSel = (currentLoc === enName);
-                
-                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white dark:bg-slate-800 dark:text-white shadow-sm transform scale-[1.03]' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
-                
-                let thName = enName;
-                const pointInfo = gData.mapsData[curM]?.points?.find(p => p.id === enName);
-                if (pointInfo) thName = pointInfo.name.th;
-                
-                btn.innerHTML = `
-                    <span class="text-2xl ${isSel?'':'opacity-60'} leading-none mb-1">${mapIcons[curM][enName]}</span>
-                    <span class="text-[10px] font-bold ${isSel?'text-indigo-700 dark:text-indigo-400':'text-gray-700 dark:text-gray-300'} leading-tight">${enName}</span>
-                    <span class="text-[9px] font-normal ${isSel?'text-indigo-500 dark:text-indigo-300':'text-gray-400 dark:text-gray-400'} leading-tight">${thName}</span>
-                `;
-                
-                btn.onclick = () => { 
-                    if (isSel) {
-                        tempReportPts[i] = "";
-                    } else {
-                        tempReportPts[i] = enName;
-                    }
-                    renderUserReportModal(); 
-                };
-                grid.appendChild(btn);
-            });
-            row.appendChild(grid); 
-
-            if (curM === 'hidden_temple' && currentLoc) {
-                const maxColors = (userReportingW === 4) ? 2 : 1;
-                
-                const colorSection = document.createElement('div');
-                colorSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between px-1";
-                
-                const label = document.createElement('div');
-                label.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">Aura Color (ออร่าสี):</span> <span class="text-[9px] text-gray-400">(Max ${maxColors} / สูงสุด ${maxColors})</span>`;
-                colorSection.appendChild(label);
-
-                const colorBtns = document.createElement('div');
-                colorBtns.className = "flex gap-2";
-
-                auraColors.forEach(c => {
-                    let isColorSel = currentColors.includes(c.id);
-                    let cBtn = document.createElement('button');
-                    
-                    cBtn.className = `w-7 h-7 rounded-full ${c.hexClass} transition-all border-2 ${isColorSel ? 'border-gray-800 dark:border-white scale-110 shadow-md ' + c.shadowClass : 'border-transparent opacity-60 hover:opacity-100'}`;
-                    
-                    if(isColorSel) {
-                        cBtn.innerHTML = '<i class="fa-solid fa-check text-white text-[10px]"></i>';
-                    }
-
-                    cBtn.onclick = () => {
-                        let newColors = [...currentColors];
-                        if (isColorSel) {
-                            newColors = newColors.filter(x => x !== c.id);
-                        } else {
-                            if (newColors.length >= maxColors && maxColors === 1) {
-                                newColors = [c.id];
-                            } else if (newColors.length < maxColors) {
-                                newColors.push(c.id);
-                            }
-                        }
-                        
-                        let newColorStr = newColors.length > 0 ? ":" + newColors.join(',') : "";
-                        tempReportPts[i] = currentLoc + newColorStr;
-                        renderUserReportModal();
-                    };
-                    colorBtns.appendChild(cBtn);
-                });
-                
-                colorSection.appendChild(colorBtns);
-                row.appendChild(colorSection);
+        // 👑 แอดมิน: แก้ไขในเครื่องก่อน แล้วกดปุ่ม Save เพื่อบันทึกทั้งด่าน
+        if (isAdmin) {
+            if(JSON.stringify(gData.spawnData[w][s]) !== JSON.stringify(cleanedPts)) {
+                hasUnsavedChanges = true;
             }
-
-            body.appendChild(row);
-        }
-    }
-
-    async function submitUserReport() {
-        const targetW = userReportingW;
-        const targetS = userReportingS;
-
-        if (!targetW || !targetS) return;
-
-        const cleanedPts = tempReportPts.map(x => x ? x : "").filter(Boolean);
-        if (cleanedPts.length === 0) {
-            showToast('Please select at least 1 spawn point! (กรุณาเลือกจุดเกิดอย่างน้อย 1 จุดก่อนส่งรายงาน)', 'error');
+            gData.spawnData[w][s] = cleanedPts;
+            closeEdit();
+            render();
             return;
         }
 
-        const reportedStr = tempReportPts.join('|');
-        const currentDataStr = (gData.spawnData[targetW][targetS] || []).join('|');
-
-        if (reportedStr === currentDataStr) {
-            closeUserReportModal();
-            showToast('Data matches current spawn info. (ข้อมูลจุดเกิดตรงกับปัจจุบัน ไม่ได้บันทึกเพิ่ม)');
+        // 🙋 ผู้เล่นทั่วไป: บันทึกลงข้อมูลหลักทันที
+        if (cleanedPts.filter(Boolean).length === 0) {
+            showToast('Please select at least 1 spawn point! (กรุณาเลือกจุดเกิดอย่างน้อย 1 จุด)', 'error');
             return;
         }
 
-        const mapNameEn = gData.mapsData[curM]?.name?.en || curM;
+        const pointsStr = cleanedPts.join('|');
+        if (pointsStr === (gData.spawnData[w][s] || []).join('|')) {
+            closeEdit();
+            showToast('Data matches the latest record. (ข้อมูลตรงกับบันทึกล่าสุดแล้ว)');
+            return;
+        }
 
-        const btnSubmit = document.getElementById('btn-submit-report');
-        if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> Submitting... (กำลังส่งข้อมูล...)';
+        const mapNameEn = gData.mapsData[curM] ? gData.mapsData[curM].name.en : curM;
+        const btn = document.getElementById('btn-confirm-edit');
+        const oldHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.innerHTML = '<span class="text-sm"><i class="fa-solid fa-circle-notch fa-spin"></i> Saving... (กำลังบันทึก...)</span>';
+            btn.disabled = true;
+        }
 
         try {
-            const res = await apiCall('reportWaveData', targetW, targetS, reportedStr, mapNameEn);
-            closeUserReportModal();
+            const res = await apiCall('saveWaveData', w, s, pointsStr, mapNameEn);
 
             if (res.status === 'success') {
-                if (!gData.reportCounts) gData.reportCounts = {};
-                
-                // 🌟 รีเฟรชข้อมูล reportCounts ล่าสุดจากเซิร์ฟเวอร์เพื่อให้ชัวร์ว่าอัปเดตตรง 100%
-                const mapRes = await apiCall('getWeeklyMapData');
-                if (mapRes.success && mapRes.reportCounts) {
-                    gData.reportCounts = mapRes.reportCounts;
-                } else if (res.totalReports !== undefined) {
-                    gData.reportCounts[`${targetW}_${targetS}`] = res.totalReports;
-                }
-
-                if (res.autoApproved) {
-                    showToast(`🎉 Wave ${targetW}.${targetS} 2 matching reports! Data updated! (รายงานตรงกัน 2 คน อัปเดตข้อมูลสำเร็จ!)`);
-                    if (res.points) {
-                        gData.spawnData[targetW][targetS] = res.points.split('|');
-                    }
+                if (res.latest && res.latest.success) {
+                    gData.spawnData = res.latest.spawnData;
+                    mapDate = res.latest.mapDate || mapDate;
                 } else {
-                    showToast(`📩 Wave ${targetW}.${targetS} report saved! (บันทึกรายงานสำเร็จแล้ว)`);
+                    gData.spawnData[w][s] = cleanedPts;
                 }
+                closeEdit();
                 render();
-            } else if (res.status === 'no_change') {
-                showToast(res.message || 'Data matches current info. (ข้อมูลตรงกับปัจจุบัน ไม่ได้บันทึกเพิ่ม)');
+                showToast(`✅ Wave ${w}.${s} saved! (บันทึกเวฟ ${w}.${s} เรียบร้อยแล้ว)`);
+            } else if (res.code === 'map_mismatch') {
+                closeEdit();
+                await refreshLatestData();
+                showModal('error', 'Map Changed (ด่านถูกเปลี่ยน)', res.message);
             } else {
-                showToast(res.message || 'Failed to submit report (ไม่สามารถส่งรายงานได้)', 'error');
+                showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', res.message || 'Cannot save wave data (ไม่สามารถบันทึกข้อมูลได้)');
             }
         } catch(e) {
-            closeUserReportModal();
-            showToast(e.toString(), 'error');
+            showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', e.toString());
         } finally {
-            if (btnSubmit) btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i> <span class="text-sm">Submit Report (ส่งข้อมูลรายงาน)</span>';
+            if (btn) {
+                btn.innerHTML = oldHtml;
+                btn.disabled = false;
+            }
         }
     }
 
-    // 📋 Admin Log Review Logic
-    async function openAdminReportLogsModal(targetW = null, targetS = null) {
-        if (!isAdmin) return;
-        const body = document.getElementById('admin-report-logs-body');
-        const titleEl = document.getElementById('admin-report-title');
-        
-        if (titleEl) {
-            if (targetW && targetS) {
-                titleEl.innerHTML = `📋 Report Logs (Log การรายงาน) - <span class="text-indigo-600 dark:text-indigo-400 font-bold">Wave ${targetW}.${targetS}</span>`;
-            } else {
-                titleEl.innerHTML = `📋 All User Report Logs (Log ข้อมูลที่ผู้ใช้รายงานทั้งหมด)`;
-            }
-        }
-
-        body.innerHTML = '<div class="text-center py-8 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-indigo-500"></i><br/><span class="text-xs font-bold">Loading report logs... (กำลังโหลดข้อมูล Log การรายงาน...)</span></div>';
-        document.getElementById('admin-report-modal').classList.remove('hidden');
-
-        try {
-            const res = await apiCall('getReportLogs');
-            if (!res.success) {
-                body.innerHTML = `<div class="text-center py-6 text-red-500 font-bold text-xs">Error: ${res.error}</div>`;
-                return;
-            }
-
-            body.innerHTML = "";
-            let hasLogs = false;
-
-            const waveList = targetW ? [parseInt(targetW, 10)] : [1,2,3,4];
-            const subList = targetS ? [parseInt(targetS, 10)] : [1,2,3];
-
-            waveList.forEach(w => {
-                subList.forEach(s => {
-                    const key = `${w}_${s}`;
-                    const reports = res.logs[key] || {};
-                    const reportKeys = Object.keys(reports);
-
-                    if (reportKeys.length > 0) {
-                        hasLogs = true;
-                        const card = document.createElement('div');
-                        card.className = "bg-gray-50 dark:bg-slate-900 p-3 rounded-2xl border border-gray-100 dark:border-slate-700 flex flex-col gap-2";
-                        
-                        let cardHtml = `
-                            <div class="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-700">
-                                <span class="font-black text-sm text-indigo-600 dark:text-indigo-400">Wave ${w}.${s}</span>
-                                <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 font-bold px-2 py-0.5 rounded-full">${reportKeys.length} Reports (รายการ)</span>
-                            </div>
-                        `;
-
-                        reportKeys.forEach(ptsStr => {
-                            const count = reports[ptsStr];
-                            const ptsArr = ptsStr.split('|').filter(Boolean);
-                            
-                            let ptsDisplay = ptsArr.map(p => {
-                                let loc = p.includes(':') ? p.split(':')[0] : p;
-                                let colors = p.includes(':') ? p.split(':')[1].split(',') : [];
-                                let icon = mapIcons[curM][loc] || loc;
-                                let colorDots = colors.map(c => {
-                                    let cObj = auraColors.find(ac => ac.id === c);
-                                    return cObj ? `<span class="inline-block w-2.5 h-2.5 rounded-full ${cObj.hexClass} ml-0.5 shadow-sm"></span>` : '';
-                                }).join('');
-                                return `<span class="inline-flex items-center gap-1 font-bold text-xs bg-white dark:bg-slate-800 px-2 py-1 rounded-lg border border-gray-200 dark:border-slate-700">${icon} ${loc}${colorDots}</span>`;
-                            }).join(' ');
-
-                            cardHtml += `
-                                <div class="flex items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-800/80 rounded-xl border border-gray-100 dark:border-slate-700/60">
-                                    <div class="flex flex-col gap-1">
-                                        <div class="flex flex-wrap gap-1">${ptsDisplay}</div>
-                                        <span class="text-[10px] text-gray-400 dark:text-gray-400 font-medium">Matching reports (รายงานตรงกัน): <b class="text-indigo-600 dark:text-indigo-400 font-bold">${count} users (คน)</b></span>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 flex-shrink-0">
-                                        <button onclick="deleteReportLogAction(${w}, ${s}, '${ptsStr.replace(/'/g, "\\'")}')" title="Delete this report log (ลบรายการรายงานนี้ทิ้ง)" class="px-2.5 py-1.5 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-500/30 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1">
-                                            <i class="fa-solid fa-trash-can text-xs"></i> Delete (ลบทิ้ง)
-                                        </button>
-                                        <button onclick="approveReportLog(${w}, ${s}, '${ptsStr.replace(/'/g, "\\'")}')" title="Approve to save data (อนุมัติข้อมูลนี้ลงแถว 16)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-md flex items-center gap-1">
-                                            <i class="fa-solid fa-check text-xs"></i> Approve (อนุมัติ)
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                        });
-
-                        card.innerHTML = cardHtml;
-                        body.appendChild(card);
-                    }
-                });
-            });
-
-            if (!hasLogs) {
-                body.innerHTML = `
-                    <div class="text-center py-10 text-gray-400 dark:text-gray-500">
-                        <i class="fa-solid fa-inbox text-4xl mb-3 opacity-40"></i>
-                        <p class="text-xs font-bold">${targetW ? `No reports for Wave ${targetW}.${targetS} yet (ยังไม่มีรายงานสำหรับ Wave ${targetW}.${targetS})` : 'No user reports for this week yet (ยังไม่มีรายงานจากผู้ใช้ในรอบสัปดาห์นี้)'}</p>
-                    </div>
-                `;
-            }
-        } catch(e) {
-            body.innerHTML = `<div class="text-center py-6 text-red-500 font-bold text-xs">Error: ${e.toString()}</div>`;
-        }
-    }
-
-    function closeAdminReportLogsModal() {
-        document.getElementById('admin-report-modal').classList.add('hidden');
-    }
-
-    function deleteReportLogAction(w, s, pointsStr) {
-        if (!adminPass) {
-            openLogin();
-            return;
-        }
-        showModal(
-            'warning',
-            'Delete Report Log? (ลบรายการรายงาน?)',
-            `Do you want to delete this report log for Wave ${w}.${s}?<br/><br/><span class="text-[10px] text-gray-400">(คุณต้องการลบข้อมูลรายงานนี้ใน Wave ${w}.${s} ทิ้งหรือไม่?)</span>`,
-            async () => {
-                try {
-                    const res = await apiCall('deleteReportLog', w, s, pointsStr, adminPass);
-                    if (res.status === 'success') {
-                        showToast(`🗑️ Deleted report log for Wave ${w}.${s}! (ลบรายงานเรียบร้อยแล้ว)`);
-                        openAdminReportLogsModal(w, s);
-                        const mapRes = await apiCall('getWeeklyMapData');
-                        if (mapRes.success && mapRes.reportCounts) {
-                            gData.reportCounts = mapRes.reportCounts;
-                            render();
-                        }
-                    } else {
-                        showModal('error', 'Error (เกิดข้อผิดพลาด)', res.message || 'Cannot delete report (ไม่สามารถลบรายงานได้)');
-                    }
-                } catch(e) {
-                    showModal('error', 'Error (เกิดข้อผิดพลาด)', e.toString());
-                }
-            }
-        );
-    }
-
-    function approveReportLog(w, s, pointsStr) {
-        if (!adminPass) {
-            openLogin();
-            return;
-        }
-        showModal(
-            'warning',
-            'Approve Report Data? (ยืนยันข้อมูลรายงาน?)',
-            `Do you want to approve and save this report data to Wave ${w}.${s}?<br/><br/><span class="text-[10px] text-amber-500 font-normal">*All report logs for Wave ${w}.${s} will be cleared upon approval (ข้อมูล Log รายงานทั้งหมดของ Wave ${w}.${s} จะถูกลบทิ้งเมื่ออนุมัติ)</span>`,
-            async () => {
-                try {
-                    const res = await apiCall('approveReportLog', w, s, pointsStr, adminPass);
-                    if (res.status === 'success') {
-                        showToast(`✅ Wave ${w}.${s} data approved and saved! (อนุมัติข้อมูลเรียบร้อยแล้ว)`);
-                        gData.spawnData[w][s] = pointsStr ? pointsStr.split('|') : [];
-                        if (!gData.reportCounts) gData.reportCounts = {};
-                        gData.reportCounts[`${w}_${s}`] = 0;
-                        render();
-                        openAdminReportLogsModal(w, s);
-                    } else {
-                        showModal('error', 'Error (เกิดข้อผิดพลาด)', res.message || 'Cannot approve (ไม่สามารถอนุมัติได้)');
-                    }
-                } catch(e) {
-                    showModal('error', 'Error (เกิดข้อผิดพลาด)', e.toString());
-                }
-            }
-        );
-    }
 
     function clearData() { 
         showModal(
@@ -1417,10 +1250,7 @@
                 gData.currentMapId = curM; 
                 originalMapId = curM; 
                 render();
-                
-                const t = document.getElementById('toast');
-                t.classList.remove('hidden');
-                setTimeout(() => t.classList.add('hidden'), 3000);
+                showToast('Saved! (บันทึกสำเร็จ)');
             } else {
                 showModal('error', 'Save Failed', 'Error: ' + res.message);
             }
@@ -1453,15 +1283,8 @@
         updateVoiceButton();
         updateLangButton();
         updateRateUI();
-        const isDark = document.documentElement.classList.contains('dark');
-        const menuThemeIcon = document.getElementById('menu-theme-icon');
-        const menuThemeBadge = document.getElementById('menu-theme-badge');
-        if (menuThemeIcon) {
-            menuThemeIcon.className = isDark ? 'fa-solid fa-sun text-amber-400 w-4 text-center' : 'fa-solid fa-moon text-amber-500 w-4 text-center';
-        }
-        if (menuThemeBadge) {
-            menuThemeBadge.textContent = isDark ? 'Light Mode' : 'Dark Mode';
-        }
+        updateThemeUI();
+        updateFullscreenButton();
 
         document.getElementById('date-display').innerHTML = `Week (สัปดาห์): ${mapDate}`;
         const visitEl = document.getElementById('visit-counter');
@@ -1529,7 +1352,7 @@
                     numId = `id="active-timer-el"`;
                 }
                 
-                const onClickAction = isAdmin ? `openEdit(${w}, ${s})` : `activateSubWave(${w}, ${s})`;
+                const onClickAction = isAdmin ? `openWaveEdit(${w}, ${s})` : `activateSubWave(${w}, ${s})`;
                 
                 html += `
                     <div class="flex items-center py-2.5 transition-all duration-300 cursor-pointer ${rowStyle}" onclick="${onClickAction}">
@@ -1564,7 +1387,7 @@
 
                             html += `
                                 <div class="flex flex-col items-center">
-                                    <span class="text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
+                                    <span class="wave-icon text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
                                     ${colorDotsHtml}
                                 </div>
                             `;
@@ -1577,29 +1400,12 @@
                 }
                 
                 html += `</div>`;
-                const rKey = `${w}_${s}`;
-                const rCount = (gData.reportCounts && gData.reportCounts[rKey]) ? gData.reportCounts[rKey] : 0;
-                
-                if (isAdmin) {
-                    // 🌟 ถ้าเป็น Admin และมีรายงานส่งเข้ามาใน Wave นี้ (rCount > 0) ให้แสดงปุ่ม/Badge รายงานเฉพาะ Wave นั้น
-                    if (rCount > 0) {
-                        html += `
-                            <button onclick="event.stopPropagation(); openAdminReportLogsModal(${w}, ${s})" title="View reports for Wave ${w}.${s} (${rCount} reports / ${rCount} รายงาน)" class="ml-1 px-2.5 py-1.5 flex items-center gap-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 dark:bg-amber-400/20 dark:hover:bg-amber-400/30 text-amber-600 dark:text-amber-300 text-xs font-bold border border-amber-300/60 dark:border-amber-500/40 hover:scale-105 active:scale-95 transition-all shadow-sm">
-                                <span class="bg-rose-500 text-white text-[9px] font-black px-1.5 min-w-[16px] h-4 rounded-full inline-flex items-center justify-center shadow-sm animate-pulse">${rCount}</span>
-                                <i class="fa-solid fa-clipboard-list text-amber-500 dark:text-amber-400 text-xs"></i>
-                                <span class="text-[10px] hidden sm:inline font-bold">Logs (รายงาน)</span>
-                            </button>
-                        `;
-                    }
-                } else {
-                    // 🌟 ถ้าเป็นผู้ใช้ทั่วไป: แสดงปุ่ม "Report (แจ้งจุด)"
-                    const badgeHtml = rCount > 0 ? `<span class="bg-rose-500 text-white text-[9px] font-black px-1.5 min-w-[16px] h-4 rounded-full inline-flex items-center justify-center shadow-sm animate-pulse">${rCount}</span>` : '';
-                    
+
+                // ✏️ ปุ่มดินสอ : ผู้เล่นทุกคนช่วยกันบันทึกจุดเกิดของเวฟนี้ได้ (แอดมินใช้คลิกทั้งแถวแทน)
+                if (!isAdmin) {
                     html += `
-                        <button onclick="event.stopPropagation(); openUserReport(${w}, ${s})" title="Report Spawn Location (แจ้ง/ส่งข้อมูลจุดเกิด)${rCount > 0 ? ` (${rCount} reports)` : ''}" class="ml-1 px-2.5 py-1.5 flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 dark:from-indigo-400/15 dark:to-violet-400/15 text-indigo-600 dark:text-indigo-300 text-xs font-bold border border-indigo-200/60 dark:border-indigo-500/30 hover:scale-105 active:scale-95 transition-all shadow-sm">
-                            ${badgeHtml}
-                            <i class="fa-solid fa-paper-plane text-indigo-500 dark:text-indigo-400 text-xs"></i>
-                            <span class="text-[10px] hidden sm:inline font-bold">Report (แจ้งจุด)</span>
+                        <button onclick="event.stopPropagation(); openWaveEdit(${w}, ${s})" title="Edit & Save this wave (แก้ไข/บันทึกจุดเกิดของเวฟนี้)" class="ml-1 w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl bg-gradient-to-r from-indigo-500/10 to-violet-500/10 hover:from-indigo-500/20 hover:to-violet-500/20 dark:from-indigo-400/15 dark:to-violet-400/15 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-500/30 hover:scale-105 active:scale-95 transition-all shadow-sm">
+                            <i class="fa-solid fa-pencil text-indigo-500 dark:text-indigo-400 text-sm md:text-base"></i>
                         </button>
                     `;
                 }
