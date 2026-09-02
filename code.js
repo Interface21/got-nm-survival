@@ -19,6 +19,8 @@ function doPost(e) {
       result = saveWaveData(args[0], args[1], args[2], args[3]);
     } else if (action === 'getLatestSpawnData') {
       result = getLatestSpawnData();
+    } else if (action === 'setWeeklyMap') {
+      result = setWeeklyMap(args[0]);
     } else {
       result = { error: 'Action not found' };
     }
@@ -131,9 +133,11 @@ function getWeeklyMapData() {
 
     // 2. อ่านข้อมูลสัปดาห์ปัจจุบันจากแถวที่ 16 (บันทึกทับในแถวเดิม)
     let mapDate = currentWeekDate;
-    let logMapId = Object.keys(mapsData)[0] || ""; 
+    let logMapId = "";
+    let logMapName = "";
     let spawnData = { 1:{1:[],2:[],3:[]}, 2:{1:[],2:[],3:[]}, 3:{1:[],2:[],3:[]}, 4:{1:[],2:[],3:[]} };
     let isDataMatchCurrentWeek = false;
+    let hasWaveData = false;
 
     const logRange = sheet.getRange("A16:N16");
     const logDisplays = logRange.getDisplayValues()[0];
@@ -146,6 +150,7 @@ function getWeeklyMapData() {
       isDataMatchCurrentWeek = true;
       mapDate = lastDateInDb;
       const mapNameEn = logValues[1] ? logValues[1].toString().trim() : "";
+      logMapName = mapNameEn;
 
       for (let id in mapsData) {
         if (mapsData[id].name.en.toLowerCase() === mapNameEn.toLowerCase() || mapsData[id].name.th === mapNameEn) {
@@ -159,20 +164,36 @@ function getWeeklyMapData() {
         [1,2,3].forEach(s => {
           const cellData = logValues[colIdx] ? logValues[colIdx].toString().trim() : "";
           spawnData[w][s] = cellData ? cellData.split('|').filter(x => x) : [];
+          if (spawnData[w][s].length > 0) hasWaveData = true;
           colIdx++;
         });
       });
     } else {
-      // 🧹 สัปดาห์ใหม่! อัปเดตวันที่แถว 16 เป็นสัปดาห์ใหม่ และล้างจุดเกิดเก่าทิ้ง (รอแอดมินตั้งด่านใหม่)
+      // 🧹 สัปดาห์ใหม่! อัปเดตวันที่แถว 16 เป็นสัปดาห์ใหม่ และล้างจุดเกิดเก่าทิ้ง (รอผู้เล่นเลือกด่านใหม่)
       try {
         sheet.getRange("A16").setValue(currentWeekDate);
         sheet.getRange("B16:N16").clearContent();
       } catch(e) {}
     }
 
-    // ถ้าไม่ใช่ข้อมูลของสัปดาห์นี้ ระบบจะส่ง spawnData ที่เคลียร์ว่างเปล่ากลับไปให้ (รอให้แอดมินเซฟเป็นข้อมูลใหม่)
+    // 🌟 ยังไม่มีด่านของสัปดาห์นี้ = ผู้เล่นคนไหนก็เลือกด่านได้เลย (ไม่ต้องรอแอดมิน)
+    const isMapSet = isDataMatchCurrentWeek && !!logMapId;
+    if (!isMapSet) logMapId = "";
+
     const visitCount = getAndIncrementVisitCount(sheet);
-    return { success: true, mapDate, currentMapId: logMapId, spawnData, mapsData, isNewWeek: !isDataMatchCurrentWeek, visitCount };
+    return {
+      success: true,
+      mapDate,
+      currentMapId: logMapId,
+      mapNameEn: logMapName,
+      spawnData,
+      mapsData,
+      isNewWeek: !isDataMatchCurrentWeek,
+      isMapSet,
+      hasWaveData,
+      canChangeMap: !isMapSet || !hasWaveData,
+      visitCount
+    };
 
   } catch (e) {
     return { success: false, error: e.message };
@@ -232,6 +253,7 @@ function getLatestSpawnData() {
 
     let spawnData = { 1:{1:[],2:[],3:[]}, 2:{1:[],2:[],3:[]}, 3:{1:[],2:[],3:[]}, 4:{1:[],2:[],3:[]} };
     const isCurrentWeek = (rowDate === currentWeekDate);
+    let hasWaveData = false;
 
     if (isCurrentWeek) {
       let colIdx = 2;
@@ -239,12 +261,24 @@ function getLatestSpawnData() {
         [1,2,3].forEach(s => {
           const cellData = displays[colIdx] ? displays[colIdx].toString().trim() : "";
           spawnData[w][s] = cellData ? cellData.split('|').filter(x => x) : [];
+          if (spawnData[w][s].length > 0) hasWaveData = true;
           colIdx++;
         });
       });
     }
 
-    return { success: true, mapDate: rowDate, mapNameEn, spawnData, isCurrentWeek };
+    const isMapSet = isCurrentWeek && !!mapNameEn;
+
+    return {
+      success: true,
+      mapDate: rowDate,
+      mapNameEn: isMapSet ? mapNameEn : "",
+      spawnData,
+      isCurrentWeek,
+      isMapSet,
+      hasWaveData,
+      canChangeMap: !isMapSet || !hasWaveData
+    };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -267,12 +301,12 @@ function saveWaveData(wave, subwave, pointsStr, mapNameEn) {
     const rowDate = headerVals[0] ? headerVals[0].trim() : "";
     const rowMapName = headerVals[1] ? headerVals[1].trim() : "";
 
-    // 1. ต้องมีด่านของสัปดาห์นี้อยู่ก่อน (แอดมินเป็นผู้ตั้งด่านใหม่)
+    // 1. ต้องมีด่านของสัปดาห์นี้อยู่ก่อน (ผู้เล่นคนไหนก็เลือกด่านได้)
     if (rowDate !== currentWeekDate || !rowMapName) {
       return {
         status: "error",
         code: "no_map",
-        message: "ยังไม่มีข้อมูลด่านของสัปดาห์นี้ กรุณารอแอดมินบันทึกด่านใหม่ก่อน / Waiting for admin to set this week's map."
+        message: "ยังไม่ได้เลือกด่านของสัปดาห์นี้ กรุณาเลือกด่านก่อน / This week's map is not selected yet. Please choose a map first."
       };
     }
 
@@ -290,6 +324,62 @@ function saveWaveData(wave, subwave, pointsStr, mapNameEn) {
     sheet.getRange(16, colIdx).setValue(pointsStr || "");
     SpreadsheetApp.flush();
 
+    const latest = getLatestSpawnData();
+    return { status: "success", latest };
+  } catch (e) {
+    return { status: "error", message: e.message };
+  } finally {
+    try { lock.releaseLock(); } catch(e) {}
+  }
+}
+
+// 🗺️ ผู้เล่นทุกคนเลือก/แก้ไขด่านของสัปดาห์นี้ได้เอง (ไม่ต้องรอแอดมิน)
+// แก้ด่านได้ตราบใดที่ยังไม่มีการบันทึก Wave ใด ๆ เข้ามา
+function setWeeklyMap(mapNameEn) {
+  const lock = LockService.getScriptLock();
+  try {
+    const newMapName = mapNameEn ? mapNameEn.toString().trim() : "";
+    if (!newMapName) {
+      return { status: "error", code: "invalid_map", message: "ไม่พบชื่อด่าน / Map name is required." };
+    }
+
+    if (!lock.tryLock(20000)) {
+      return { status: "error", message: "ระบบกำลังบันทึกข้อมูลของผู้เล่นคนอื่นอยู่ กรุณาลองใหม่อีกครั้ง / Busy, please try again." };
+    }
+
+    const sheet = getOurSheet();
+    const currentWeekDate = getCurrentResetDateStr();
+
+    const displays = sheet.getRange("A16:N16").getDisplayValues()[0];
+    const rowDate = displays[0] ? displays[0].trim() : "";
+    const rowMapName = displays[1] ? displays[1].trim() : "";
+
+    let hasWaveData = false;
+    for (let c = 2; c <= 13; c++) {
+      if (displays[c] && displays[c].toString().trim()) { hasWaveData = true; break; }
+    }
+
+    if (rowDate !== currentWeekDate) {
+      // สัปดาห์ใหม่: ตั้งวันที่ + ด่าน แล้วล้างจุดเกิดเก่าทิ้ง
+      sheet.getRange(16, 1, 1, 14).setValues([[currentWeekDate, newMapName, "", "", "", "", "", "", "", "", "", "", "", ""]]);
+    } else if (!rowMapName) {
+      sheet.getRange("B16").setValue(newMapName);
+    } else if (rowMapName.toLowerCase() === newMapName.toLowerCase()) {
+      // ด่านเดิมอยู่แล้ว ไม่ต้องทำอะไร
+    } else if (hasWaveData) {
+      return {
+        status: "error",
+        code: "map_locked",
+        currentMapName: rowMapName,
+        message: "มีการบันทึก Wave ของด่าน " + rowMapName + " แล้ว จึงเปลี่ยนด่านไม่ได้ / Waves already recorded for " + rowMapName + ", map can no longer be changed."
+      };
+    } else {
+      // ยังไม่มีใครบันทึก Wave เลย เปลี่ยนด่านได้
+      sheet.getRange("B16").setValue(newMapName);
+      sheet.getRange("C16:N16").clearContent();
+    }
+
+    SpreadsheetApp.flush();
     const latest = getLatestSpawnData();
     return { status: "success", latest };
   } catch (e) {

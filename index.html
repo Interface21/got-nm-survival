@@ -148,7 +148,7 @@
         <i class="fa-solid fa-bell-concierge text-yellow-500 text-xl mt-0.5 animate-bounce"></i>
         <div>
             <p class="font-black text-sm text-yellow-800 tracking-wide" id="notice-title">New Week Reset! (รีเซ็ตสัปดาห์ใหม่แล้ว!)</p>
-            <p class="text-[11px] mt-0.5 text-yellow-700 font-medium" id="notice-desc">Please wait for the Admin to update the spawn data.<br/>(โปรดรอแอดมินอัปเดตข้อมูลด่านและจุดเกิดสักครู่นะครับ)</p>
+            <p class="text-[11px] mt-0.5 text-yellow-700 font-medium" id="notice-desc">Select this week's map and record the waves together.<br/>(เลือกด่านของสัปดาห์นี้ แล้วช่วยกันบันทึกจุดเกิดได้เลย ไม่ต้องรอแอดมิน)</p>
         </div>
     </div>
 
@@ -157,10 +157,11 @@
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 dark:border-slate-700 gap-1 transition-colors">
             <div class="flex-1 flex items-center bg-gray-50 dark:bg-slate-900/80 rounded-xl px-2 relative w-full transition-colors">
                 <i class="fa-solid fa-location-dot text-gray-400 mr-2 text-sm"></i>
-                <select id="map-select" onchange="changeMap(this.value)" class="w-full py-2 font-black text-sm text-gray-800 dark:text-gray-100 bg-transparent outline-none cursor-pointer appearance-none">
+                <select id="map-select" onchange="changeMap(this.value)" class="flex-1 min-w-0 py-2 font-black text-sm text-gray-800 dark:text-gray-100 bg-transparent outline-none cursor-pointer appearance-none">
                     <!-- โหลดจาก JS -->
                 </select>
                 <i id="chevron-map" class="fa-solid fa-caret-down text-gray-400 absolute right-3 pointer-events-none hidden"></i>
+                <button id="btn-change-map" onclick="openMapPicker(false)" class="hidden flex-shrink-0 ml-1 text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition flex items-center gap-1" title="Change this week's map (เปลี่ยนด่านของสัปดาห์นี้)"><i class="fa-solid fa-repeat"></i> <span>Change</span></button>
             </div>
             
             <div class="flex items-center gap-1.5 w-full md:w-auto">
@@ -337,6 +338,22 @@
         </div>
     </div>
 
+    <!-- Map Picker Modal (ผู้เล่นทุกคนเลือกด่านของสัปดาห์นี้ได้เอง) -->
+    <div id="map-picker-modal" class="hidden absolute inset-0 z-[90] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-5 rounded-3xl w-full max-w-sm shadow-2xl my-auto border dark:border-slate-700 transition-colors relative" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
+            <button id="map-picker-close" onclick="closeMapPicker()" class="hidden absolute top-4 right-4 w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
+            <div class="text-center mb-4">
+                <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 bg-indigo-100 dark:bg-indigo-950/60">
+                    <i class="fa-solid fa-map-location-dot text-indigo-500 dark:text-indigo-400 text-2xl"></i>
+                </div>
+                <h3 id="map-picker-title" class="font-black text-lg text-gray-800 dark:text-white">Select This Week's Map</h3>
+                <p id="map-picker-desc" class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mt-1 leading-relaxed">New week has started. Choose the map, then everyone can record the waves together.<br/><span class="text-[10px] font-normal opacity-80">(รีเซ็ตสัปดาห์ใหม่แล้ว เลือกด่านได้เลย ไม่ต้องรอแอดมิน แล้วช่วยกันบันทึกเวฟ)</span></p>
+            </div>
+            <div id="map-picker-list" class="flex flex-col gap-2"></div>
+            <p class="text-[10px] text-center text-gray-400 dark:text-gray-500 mt-4 leading-relaxed">Map can still be changed until the first wave is recorded.<br/>(แก้ไขด่านได้จนกว่าจะมีการบันทึก Wave แรก)</p>
+        </div>
+    </div>
+
     <!-- Dynamic Confirm/Alert Modal -->
     <div id="dynamic-modal" onclick="if(event.target===this) closeDynamicModal()" class="hidden absolute inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
         <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
@@ -447,24 +464,26 @@
             gData = res;
             const savedMap = localStorage.getItem('got_curMap');
             // 🌟 ยึดด่านตามบันทึกล่าสุดในระบบเสมอ (ผู้เล่นทุกคนช่วยกันบันทึกด่านเดียวกัน)
-            if (!res.isNewWeek && res.currentMapId && gData.mapsData[res.currentMapId]) {
+            if (res.isMapSet && res.currentMapId && gData.mapsData[res.currentMapId]) {
                 curM = res.currentMapId;
             } else if (savedMap && gData.mapsData && gData.mapsData[savedMap]) {
                 curM = savedMap;
             } else {
-                curM = res.currentMapId || 'hidden_temple';
+                curM = Object.keys(gData.mapsData || {})[0] || 'hidden_temple';
             }
             localStorage.setItem('got_curMap', curM);
-            originalMapId = curM; 
+            originalMapId = curM;
             mapDate = res.mapDate || "";
             document.getElementById('loading-overlay').classList.add('hidden');
             render();
 
-            if (gData.isNewWeek) {
+            // 🌟 ยังไม่มีด่านของสัปดาห์นี้ (รีเซ็ตใหม่) เปิดหน้าต่างให้เลือกด่านทันที
+            if (!gData.isMapSet) {
                 showUpdateNotice();
+                openMapPicker(true);
             }
 
-            if (!localStorage.getItem('got_feature_v2_seen')) {
+            if (gData.isMapSet && !localStorage.getItem('got_feature_v2_seen')) {
                 setTimeout(() => openFeatureModal(), 600);
             }
         } catch(err) {
@@ -653,7 +672,8 @@
             { id: 'qr-modal', closeFn: typeof closeQRModal === 'function' ? closeQRModal : null },
             { id: 'login-modal', closeFn: typeof closeLogin === 'function' ? closeLogin : null },
             { id: 'dynamic-modal', closeFn: typeof closeDynamicModal === 'function' ? closeDynamicModal : null },
-            { id: 'edit-modal', closeFn: typeof closeEdit === 'function' ? closeEdit : null }
+            { id: 'edit-modal', closeFn: typeof closeEdit === 'function' ? closeEdit : null },
+            { id: 'map-picker-modal', closeFn: typeof closeMapPicker === 'function' ? closeMapPicker : null }
         ];
         modals.forEach(m => {
             const el = document.getElementById(m.id);
@@ -681,7 +701,108 @@
         }, 5000);
     }
     
-    function changeMap(v) { 
+    // 🗺️ หน้าต่างเลือกด่านของสัปดาห์นี้ (ผู้เล่นทุกคนเลือกได้ ไม่ต้องรอแอดมิน)
+    // force = true คือยังไม่มีด่านเลย ปิดหน้าต่างไม่ได้จนกว่าจะเลือก
+    let mapPickerForced = false;
+
+    function openMapPicker(force) {
+        if (!gData.mapsData) return;
+        mapPickerForced = !!force || !gData.isMapSet;
+
+        const modal = document.getElementById('map-picker-modal');
+        const closeBtn = document.getElementById('map-picker-close');
+        const title = document.getElementById('map-picker-title');
+        const desc = document.getElementById('map-picker-desc');
+
+        if (closeBtn) closeBtn.classList.remove('hidden');
+        if (title) {
+            title.innerHTML = mapPickerForced
+                ? 'Select This Week\'s Map <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">(เลือกด่านของสัปดาห์นี้)</span>'
+                : 'Change This Week\'s Map <span class="block text-sm font-medium text-gray-500 dark:text-gray-400">(เปลี่ยนด่านของสัปดาห์นี้)</span>';
+        }
+        if (desc) {
+            desc.innerHTML = mapPickerForced
+                ? 'New week has started. Choose the map, then everyone can record the waves together.<br/><span class="text-[10px] font-normal opacity-80">(รีเซ็ตสัปดาห์ใหม่แล้ว เลือกด่านได้เลย ไม่ต้องรอแอดมิน แล้วช่วยกันบันทึกเวฟ)</span>'
+                : 'No wave has been recorded yet, so the map can still be changed.<br/><span class="text-[10px] font-normal opacity-80">(ยังไม่มีการบันทึก Wave จึงยังแก้ไขด่านได้)</span>';
+        }
+
+        renderMapPickerList();
+        modal.classList.remove('hidden');
+    }
+
+    function renderMapPickerList() {
+        const list = document.getElementById('map-picker-list');
+        if (!list) return;
+        list.innerHTML = '';
+        const activeId = gData.isMapSet ? gData.currentMapId : null;
+
+        for (let id in gData.mapsData) {
+            const m = gData.mapsData[id];
+            const isSel = (id === activeId);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.mapId = id;
+            btn.className = `w-full text-left p-3 rounded-2xl border-2 transition flex items-center justify-between gap-2 ${isSel ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/50' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700'}`;
+            btn.innerHTML = `
+                <span class="flex flex-col leading-tight">
+                    <span class="font-black text-sm text-gray-800 dark:text-white">${m.name.en}</span>
+                    <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400">${m.name.th}</span>
+                </span>
+                <i class="fa-solid ${isSel ? 'fa-circle-check text-indigo-500' : 'fa-chevron-right text-gray-300 dark:text-slate-600'}"></i>`;
+            btn.onclick = () => chooseWeeklyMap(id, btn);
+            list.appendChild(btn);
+        }
+    }
+
+    function closeMapPicker() {
+        document.getElementById('map-picker-modal').classList.add('hidden');
+    }
+
+    async function chooseWeeklyMap(mapId, btnEl) {
+        if (!gData.mapsData[mapId]) return;
+
+        // แอดมินยังใช้ระบบเดิม (เลือกด่านในเครื่องแล้วกด Save)
+        if (isAdmin) {
+            mapPickerForced = false;
+            document.getElementById('map-picker-modal').classList.add('hidden');
+            changeMap(mapId);
+            return;
+        }
+
+        const mapNameEn = gData.mapsData[mapId].name.en;
+        const list = document.getElementById('map-picker-list');
+        if (list) list.querySelectorAll('button').forEach(b => b.disabled = true);
+        const oldHtml = btnEl ? btnEl.innerHTML : '';
+        if (btnEl) btnEl.innerHTML = '<span class="font-black text-sm text-gray-800 dark:text-white"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Saving... (กำลังบันทึก...)</span>';
+
+        try {
+            const res = await apiCall('setWeeklyMap', mapNameEn);
+            if (res.status === 'success') {
+                mapPickerForced = false;
+                document.getElementById('map-picker-modal').classList.add('hidden');
+                curM = mapId;
+                localStorage.setItem('got_curMap', curM);
+                originalMapId = curM;
+                applyLatest(res.latest);
+                render();
+                showToast(`🗺️ Map set: ${mapNameEn} (ตั้งด่านเป็น ${mapNameEn} แล้ว)`);
+            } else if (res.code === 'map_locked') {
+                mapPickerForced = false;
+                document.getElementById('map-picker-modal').classList.add('hidden');
+                await refreshLatestData();
+                showModal('error', 'Map Locked (เปลี่ยนด่านไม่ได้แล้ว)', res.message);
+            } else {
+                showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', res.message || 'Cannot set map (ไม่สามารถตั้งด่านได้)');
+            }
+        } catch(e) {
+            showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', e.toString());
+        } finally {
+            if (list) list.querySelectorAll('button').forEach(b => b.disabled = false);
+            if (btnEl && oldHtml) btnEl.innerHTML = oldHtml;
+        }
+    }
+
+    function changeMap(v) {
         if (subWaveTimerInterval) clearInterval(subWaveTimerInterval);
         subWaveTimerInterval = null;
         curM = v; 
@@ -961,27 +1082,45 @@
         return null;
     }
 
+    // 🧩 นำผลลัพธ์ "บันทึกล่าสุด" (แถวที่ 16) มาลงในสถานะหน้าจอ
+    function applyLatest(latest) {
+        if (!latest || !latest.success) return false;
+
+        if (latest.isCurrentWeek) {
+            gData.spawnData = latest.spawnData;
+            mapDate = latest.mapDate || mapDate;
+            gData.isNewWeek = false;
+            gData.isMapSet = !!latest.isMapSet;
+            gData.hasWaveData = !!latest.hasWaveData;
+            gData.canChangeMap = !!latest.canChangeMap;
+
+            const mid = findMapIdByName(latest.mapNameEn);
+            gData.currentMapId = mid || "";
+            if (mid && !isAdmin && mid !== curM) {
+                curM = mid;
+                localStorage.setItem('got_curMap', curM);
+            }
+        } else {
+            gData.isNewWeek = true;
+            gData.isMapSet = false;
+            gData.hasWaveData = false;
+            gData.canChangeMap = true;
+        }
+        return true;
+    }
+
     // 🔄 ดึง "บันทึกล่าสุด" (แถวที่ 16) มาอัปเดตหน้าจอ ใช้ก่อนแก้ไขและหลังบันทึกเสมอ
     async function refreshLatestData() {
         try {
             const res = await apiCall('getLatestSpawnData');
-            if (!res || !res.success) return false;
-
-            if (res.isCurrentWeek) {
-                gData.spawnData = res.spawnData;
-                mapDate = res.mapDate || mapDate;
-                gData.isNewWeek = false;
-
-                const mid = findMapIdByName(res.mapNameEn);
-                if (mid) {
-                    gData.currentMapId = mid;
-                    if (!isAdmin && mid !== curM) {
-                        curM = mid;
-                        localStorage.setItem('got_curMap', curM);
-                    }
-                }
-            }
+            if (!applyLatest(res)) return false;
             render();
+
+            // มีผู้เล่นคนอื่นเลือกด่านให้แล้ว ปิดหน้าต่างเลือกด่านอัตโนมัติ
+            if (mapPickerForced && gData.isMapSet) {
+                mapPickerForced = false;
+                document.getElementById('map-picker-modal').classList.add('hidden');
+            }
             return true;
         } catch(e) {
             return false;
@@ -990,8 +1129,9 @@
 
     // ✏️ เปิดหน้าต่างแก้ไข/บันทึกเวฟ (ผู้เล่นทุกคนใช้ได้ ไม่ต้องเป็นแอดมิน)
     async function openWaveEdit(w, s) {
-        if (!isAdmin && gData.isNewWeek) {
-            showModal('error', 'Map Not Set (ยังไม่มีข้อมูลด่าน)', 'Waiting for the admin to set this week\'s map.<br/><br/><span class="text-[10px] text-gray-400">(กรุณารอแอดมินบันทึกด่านของสัปดาห์นี้ก่อน จึงจะช่วยกันบันทึกจุดเกิดได้)</span>');
+        // ยังไม่ได้เลือกด่านของสัปดาห์นี้ ให้เลือกด่านก่อน (ผู้เล่นเลือกเองได้)
+        if (!isAdmin && !gData.isMapSet) {
+            openMapPicker(true);
             return;
         }
 
@@ -1176,15 +1316,18 @@
             const res = await apiCall('saveWaveData', w, s, pointsStr, mapNameEn);
 
             if (res.status === 'success') {
-                if (res.latest && res.latest.success) {
-                    gData.spawnData = res.latest.spawnData;
-                    mapDate = res.latest.mapDate || mapDate;
-                } else {
+                if (!applyLatest(res.latest)) {
                     gData.spawnData[w][s] = cleanedPts;
+                    gData.hasWaveData = true;
+                    gData.canChangeMap = false;
                 }
                 closeEdit();
                 render();
                 showToast(`✅ Wave ${w}.${s} saved! (บันทึกเวฟ ${w}.${s} เรียบร้อยแล้ว)`);
+            } else if (res.code === 'no_map') {
+                closeEdit();
+                await refreshLatestData();
+                openMapPicker(true);
             } else if (res.code === 'map_mismatch') {
                 closeEdit();
                 await refreshLatestData();
@@ -1217,7 +1360,7 @@
     }
 
     function saveData() {
-        if (!gData.isNewWeek && curM !== gData.currentMapId) {
+        if (gData.isMapSet && curM !== gData.currentMapId) {
             showModal(
                 'warning',
                 'Overwrite Map?<br/><span class="text-sm font-normal text-gray-500">(บันทึกทับด่านเดิม?)</span>',
@@ -1244,11 +1387,14 @@
             btn.innerHTML = originalText;
             btn.disabled = false;
             if(res.status === "success") {
-                isAdmin = false; 
-                hasUnsavedChanges = false; 
-                gData.isNewWeek = false; 
-                gData.currentMapId = curM; 
-                originalMapId = curM; 
+                isAdmin = false;
+                hasUnsavedChanges = false;
+                gData.isNewWeek = false;
+                gData.isMapSet = true;
+                gData.hasWaveData = [1,2,3,4].some(w => [1,2,3].some(s => (gData.spawnData[w] && gData.spawnData[w][s] || []).length > 0));
+                gData.canChangeMap = !gData.hasWaveData;
+                gData.currentMapId = curM;
+                originalMapId = curM;
                 render();
                 showToast('Saved! (บันทึกสำเร็จ)');
             } else {
@@ -1274,6 +1420,10 @@
 
         mapSel.disabled = !isAdmin;
         document.getElementById('chevron-map').classList.toggle('hidden', !isAdmin);
+
+        // 🗺️ ผู้เล่นทั่วไปเปลี่ยนด่านได้ตราบใดที่ยังไม่มีการบันทึก Wave ใด ๆ
+        const btnChangeMap = document.getElementById('btn-change-map');
+        if (btnChangeMap) btnChangeMap.classList.toggle('hidden', isAdmin || !gData.canChangeMap);
         document.getElementById('admin-bar').classList.toggle('hidden', !isAdmin);
         
         const headerButtons = document.getElementById('header-buttons');
