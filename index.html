@@ -87,6 +87,11 @@
             border-bottom: 1px solid #1E293B;
         }
         ::-webkit-scrollbar { display: none; }
+        /* 🗺️ แผนที่ (maps/viewer.js) — ภาพแผนที่เป็นโทนมืดทั้งสองธีม */
+        .map-view {
+            --text: #e2e8f0; --muted: #94a3b8; --panel: #1e293b; --spawn: #94a3b8; --accent: #818cf8;
+            display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -103,6 +108,7 @@
         </div>
         <div id="header-buttons" class="flex gap-2 items-center relative z-50">
             <button onclick="toggleFullscreen()" id="btn-fullscreen" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Fullscreen (เต็มจอ)"><i class="fa-solid fa-expand"></i></button>
+            <button onclick="toggleLang()" id="btn-lang" class="text-[10px] font-black bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-white border border-white/10" title="Language TH / EN (สลับภาษา)">TH</button>
             <button onclick="toggleVoice()" id="btn-voice" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Toggle Voice Announcement"><i class="fa-solid fa-volume-xmark"></i></button>
             <button onclick="toggleMenu(event)" id="btn-menu" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-white border border-white/10" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
 
@@ -175,9 +181,40 @@
             </div>
         </div>
 
-        <div id="legend-container" class="grid grid-cols-3 gap-1.5 md:gap-2 w-full py-0.5">
+        <!-- 🔀 สลับมุมมอง: แบบเดิม / แผนที่ -->
+        <div id="view-toggle" class="hidden flex-shrink-0 grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+            <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
+            <button id="view-btn-list" onclick="setViewMode('list')"></button>
+            <button id="view-btn-text" onclick="setViewMode('text')"></button>
+            <button id="view-btn-map" onclick="setViewMode('map')"></button>
+            <button id="view-btn-icons" onclick="setViewMode('icons')"></button>
+        </div>
+
+        <div id="legend-container" class="hidden flex flex-col gap-2 w-full flex-shrink-0">
             <!-- โหลดจาก JS -->
         </div>
+
+        <!-- 🗺️ มุมมองแผนที่ (ดูอย่างเดียว) + แถบเลือกเวฟ — บันทึกผ่านปุ่มดินสอ (edit modal เดิม) -->
+        <div id="map-card" class="hidden flex-shrink-0 bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
+            <div class="flex items-center justify-between gap-2 px-3 py-2">
+                <div id="map-wave-label" class="text-base font-black text-gray-100 flex items-baseline gap-2"></div>
+                <div class="flex items-center gap-2">
+                    <span id="map-wave-count" class="text-[11px] font-bold text-gray-400"></span>
+                    <button onclick="openWaveEdit(mapW, mapS)" title="Edit & Save this wave (แก้ไข/บันทึกจุดเกิดของเวฟนี้)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-400/15 hover:bg-indigo-400/25 border border-indigo-500/30 active:scale-95 transition-all">
+                        <i class="fa-solid fa-pencil text-indigo-400 text-sm"></i>
+                    </button>
+                </div>
+            </div>
+            <svg id="map-svg" class="map-view" viewBox="-18 -18 436 366" xmlns="http://www.w3.org/2000/svg"></svg>
+            <div class="flex items-stretch gap-1.5 p-2 border-t border-slate-700">
+                <button id="map-prev" onclick="stepMapWave(-1)" class="flex-shrink-0 w-11 rounded-xl border border-slate-600 bg-slate-900 text-gray-100 text-xl font-black disabled:opacity-30" aria-label="Previous wave (เวฟก่อนหน้า)">‹</button>
+                <div id="map-strip" class="flex-1 min-w-0 flex gap-1.5 overflow-x-auto"></div>
+                <button id="map-next" onclick="stepMapWave(1)" class="flex-shrink-0 w-11 rounded-xl border border-slate-600 bg-slate-900 text-gray-100 text-xl font-black disabled:opacity-30" aria-label="Next wave (เวฟต่อไป)">›</button>
+            </div>
+        </div>
+
+        <!-- 🔤 มุมมองตัวหนังสือล้วน (TH / EN) -->
+        <div id="text-container" class="hidden flex flex-col gap-2.5 pb-2"></div>
 
         <div id="waves-container" class="flex flex-col gap-2.5 pb-2">
             <!-- โหลดจาก JS -->
@@ -398,6 +435,12 @@
     </div>
 </div>
 
+<!-- ผังจุดเกิด L/C/R + ภาพแผนที่ของแต่ละด่าน -->
+<script src="maps/hidden_temple.js"></script>
+<script src="maps/river_village.js"></script>
+<script src="maps/frozen_valley.js"></script>
+<script src="maps/broken_castle.js"></script>
+<script src="maps/viewer.js"></script>
 <script>
     if (localStorage.getItem('got_theme') === 'dark' || (!localStorage.getItem('got_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark');
@@ -416,7 +459,25 @@
         { id: 'green', hexClass: 'bg-green-500', shadowClass: 'shadow-green-200' }
     ];
 
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwjM2qJCu592lrH9MzqYQVmTsb6QYRVIjigQVr9uPut_joYHCi2urO4ODrNRLAuwX_i/exec";
+    // 🧭 จุดเกิด 1 ช่อง = "Cemetery@L:orange,blue" (สถานที่ @ฝั่ง L/C/R :สี) — ข้อมูลเก่าที่ไม่มี @ ก็อ่านได้
+    function parsePt(raw) {
+        const [head, c] = (raw || "").split(':');
+        const [loc, side] = head.split('@');
+        return { loc, side: side || "", colors: c ? c.split(',').filter(Boolean) : [] };
+    }
+    function buildPt(p) {
+        return p.loc + (p.side ? '@' + p.side : '') + (p.colors.length ? ':' + p.colors.join(',') : '');
+    }
+    // ฝั่งที่มีจริงของสถานที่นั้น จาก maps/*.js (เช่น Waterfalls มีแค่ L/R)
+    function sidesOf(mapId, loc) {
+        return (window.MAPS && window.MAPS[mapId] && window.MAPS[mapId].locs[loc]) ? window.MAPS[mapId].locs[loc].spawns : [];
+    }
+    function sideName(mapId, loc, side, lang) {
+        const sp = sidesOf(mapId, loc).find(x => x.id === side);
+        return sp ? sp.name[lang] : side;
+    }
+
+    const WEB_APP_URL ="https://script.google.com/macros/s/AKfycbwjM2qJCu592lrH9MzqYQVmTsb6QYRVIjigQVr9uPut_joYHCi2urO4ODrNRLAuwX_i/exec";
 
     async function apiCall(action, ...args) {
         try {
@@ -834,6 +895,8 @@
         speechLang = (speechLang === 'TH') ? 'EN' : 'TH';
         localStorage.setItem('got_lang', speechLang);
         updateLangButton();
+        if (gData.mapsData) render();
+        if (editingW) renderEditModal();
         if (voiceEnabled && window.speechSynthesis) {
             let utterance = new SpeechSynthesisUtterance(speechLang === 'TH' ? "ภาษาไทย" : "English");
             utterance.lang = speechLang === 'TH' ? 'th-TH' : 'en-US';
@@ -848,7 +911,12 @@
         if (menuLangBadge) {
             menuLangBadge.textContent = speechLang;
         }
+        const btnLang = document.getElementById('btn-lang');
+        if (btnLang) btnLang.innerHTML = `<i class="fa-solid fa-language mr-1"></i>${speechLang}`;
     }
+
+    // 🌐 ภาษาแสดงผล (ปุ่ม TH / EN ด้านบน) ใช้ค่าเดียวกับภาษาเสียง
+    const uiLang = () => (speechLang === 'EN' ? 'en' : 'th');
 
     function toggleVoice() {
         voiceEnabled = !voiceEnabled;
@@ -923,15 +991,16 @@
         if (speechLang === 'TH') {
             const spokenPointsTh = pts.map(item => {
                 if (!item) return "";
-                let parts = item.split(':');
-                let loc = parts[0];
-                let color = parts[1] || "";
-                
+                const p = parsePt(item);
+                let loc = p.loc;
+                let color = p.colors.join(',');
+
                 let thName = loc;
-                const pointInfo = gData.mapsData[curM]?.points?.find(p => p.id === loc);
+                const pointInfo = gData.mapsData[curM]?.points?.find(pt => pt.id === loc);
                 if (pointInfo && pointInfo.name && pointInfo.name.th) {
                     thName = pointInfo.name.th;
                 }
+                if (p.side) thName += ` ${sideName(curM, loc, p.side, 'th')}`;
                 let thColor = color && colorMapTh[color] ? colorMapTh[color] : color;
                 return thColor ? `${thName} ${thColor}` : thName;
             }).filter(Boolean);
@@ -942,9 +1011,9 @@
         } else {
             const spokenPointsEn = pts.map(item => {
                 if (!item) return "";
-                let parts = item.split(':');
-                let loc = parts[0];
-                let color = parts[1] || "";
+                const p = parsePt(item);
+                let loc = p.side ? `${p.loc} ${sideName(curM, p.loc, p.side, 'en')}` : p.loc;
+                let color = p.colors.join(',');
                 return color ? `${loc} ${color}` : loc;
             }).filter(Boolean);
 
@@ -977,12 +1046,12 @@
                 }
                 activateSubWave(nextW, nextS);
             } else {
-                const el = document.getElementById('active-timer-el');
-                if (el) {
-                    let mins = Math.floor(subWaveTimeRemaining / 60);
-                    let secs = subWaveTimeRemaining % 60;
-                    el.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                }
+                let mins = Math.floor(subWaveTimeRemaining / 60);
+                let secs = subWaveTimeRemaining % 60;
+                ['active-timer-el', 'map-timer-el', 'text-timer-el'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                });
             }
         }, 1000);
     }
@@ -1178,9 +1247,10 @@
         
         for(let i=0; i<limit; i++) {
             // 🌟 แยกข้อมูล ตำแหน่ง (loc) กับ สี (colors) ออกจากกัน
-            let currentRaw = tempPts[i] || "";
-            let currentLoc = currentRaw.includes(':') ? currentRaw.split(':')[0] : currentRaw;
-            let currentColors = currentRaw.includes(':') ? currentRaw.split(':')[1].split(',') : [];
+            const currentPt = parsePt(tempPts[i]);
+            let currentLoc = currentPt.loc;
+            let currentSide = currentPt.side;
+            let currentColors = currentPt.colors;
 
             const row = document.createElement('div');
             row.className = "bg-gray-50/50 dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors";
@@ -1216,9 +1286,34 @@
                 };
                 grid.appendChild(btn);
             });
-            row.appendChild(grid); 
+            row.appendChild(grid);
 
-            // 2. 🌟 ส่วนเลือกสี (เฉพาะด่าน Hidden Temple และเมื่อเลือกสถานที่แล้ว)
+            // 2. 🧭 ส่วนเลือกฝั่งจุดเกิด L/C/R (เมื่อเลือกสถานที่แล้ว)
+            const sides = currentLoc ? sidesOf(curM, currentLoc) : [];
+            if (sides.length) {
+                const sideSection = document.createElement('div');
+                sideSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between gap-2 px-1";
+                sideSection.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">Side (ฝั่ง):</span>`;
+
+                const sideBtns = document.createElement('div');
+                sideBtns.className = "flex gap-1.5";
+                sides.forEach(sp => {
+                    const isSideSel = (currentSide === sp.id);
+                    const sBtn = document.createElement('button');
+                    sBtn.className = `min-w-[48px] px-2 py-1 rounded-lg border-2 transition-all flex flex-col items-center leading-tight ${isSideSel ? 'border-indigo-500 bg-indigo-500 text-white shadow-sm' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
+                    sBtn.innerHTML = `<span class="text-[11px] font-black">${sp.id}</span><span class="text-[9px] font-normal">${sp.name[uiLang()]}</span>`;
+                    sBtn.onclick = () => {
+                        tempPts[i] = buildPt({ loc: currentLoc, side: isSideSel ? "" : sp.id, colors: currentColors });
+                        renderEditModal();
+                    };
+                    sideBtns.appendChild(sBtn);
+                });
+
+                sideSection.appendChild(sideBtns);
+                row.appendChild(sideSection);
+            }
+
+            // 3. 🌟 ส่วนเลือกสี (เฉพาะด่าน Hidden Temple และเมื่อเลือกสถานที่แล้ว)
             if (curM === 'hidden_temple' && currentLoc) {
                 const maxColors = (editingW === 4) ? 2 : 1;
                 
@@ -1254,8 +1349,7 @@
                             }
                         }
                         
-                        let newColorStr = newColors.length > 0 ? ":" + newColors.join(',') : "";
-                        tempPts[i] = currentLoc + newColorStr;
+                        tempPts[i] = buildPt({ loc: currentLoc, side: currentSide, colors: newColors });
                         renderEditModal();
                     };
                     colorBtns.appendChild(cBtn);
@@ -1413,7 +1507,7 @@
         for(let id in gData.mapsData) {
             const opt = document.createElement('option');
             opt.value = id;
-            opt.textContent = `${gData.mapsData[id].name.en} (${gData.mapsData[id].name.th})`;
+            opt.textContent = gData.mapsData[id].name[uiLang()];
             if(id === curM) opt.selected = true;
             mapSel.appendChild(opt);
         }
@@ -1444,23 +1538,39 @@
 
         const d = gData.spawnData, i = mapIcons[curM];
         
+        // 🧾 คำแนะนำไอคอนของทุกด่าน (แท็บ Icons)
         const leg = document.getElementById('legend-container');
-        leg.innerHTML = '';
-        for (let k in i) {
-            let thName = k;
-            const pointInfo = gData.mapsData[curM].points.find(p => p.id === k);
-            if (pointInfo) thName = pointInfo.name.th;
-            
-            leg.innerHTML += `
-                <div class="bg-white dark:bg-slate-800 dark:border-slate-700 rounded-xl shadow-sm border border-gray-100 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 opacity-90 hover:opacity-100 transition-all hover:shadow-md cursor-default">
-                    <span class="text-[24px] md:text-[28px] drop-shadow-sm leading-none">${i[k]}</span>
-                    <div class="flex flex-col items-center md:items-start text-center md:text-left">
-                        <span class="text-[9px] md:text-[10px] font-bold text-gray-700 dark:text-gray-200 uppercase tracking-widest leading-tight">${k}</span>
-                        <span class="text-[8px] md:text-[9px] font-medium text-gray-400 dark:text-gray-400 leading-tight">${thName}</span>
+        let legHtml = '';
+        for (let mId in mapIcons) {
+            const mInfo = (gData.mapsData && gData.mapsData[mId]) || (window.MAPS && window.MAPS[mId]);
+            const isCur = (mId === curM);
+            let cards = '';
+            for (let k in mapIcons[mId]) {
+                let thName = k;
+                const pointInfo = gData.mapsData && gData.mapsData[mId] && gData.mapsData[mId].points.find(p => p.id === k);
+                if (pointInfo) thName = pointInfo.name.th;
+                else if (window.MAPS && window.MAPS[mId] && window.MAPS[mId].locs[k]) thName = window.MAPS[mId].locs[k].name.th;
+
+                cards += `
+                    <div class="bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-100 dark:border-slate-700 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 cursor-default">
+                        <span class="text-[24px] md:text-[28px] drop-shadow-sm leading-none">${mapIcons[mId][k]}</span>
+                        <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                            <span class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-200 leading-tight">${uiLang() === 'th' ? thName : k}</span>
+                        </div>
                     </div>
+                `;
+            }
+            legHtml += `
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border-2 ${isCur ? 'border-indigo-500' : 'border-gray-100 dark:border-slate-700'} p-2 transition-colors">
+                    <div class="flex items-center justify-between gap-2 px-1 mb-2">
+                        <span class="text-xs font-black text-gray-800 dark:text-gray-100">${window.MAPS && window.MAPS[mId] ? window.MAPS[mId].icon + ' ' : ''}${mInfo ? mInfo.name[uiLang()] : mId}</span>
+                        ${isCur ? `<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300">${uiLang() === 'th' ? 'สัปดาห์นี้' : 'This week'}</span>` : ''}
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 md:gap-2">${cards}</div>
                 </div>
             `;
         }
+        leg.innerHTML = legHtml;
 
         const con = document.getElementById('waves-container');
         con.innerHTML = '';
@@ -1514,8 +1624,9 @@
                     const rawItem = d[w][s] ? d[w][s][idx] : null;
                     if (rawItem) {
                         // 🌟 แยกส่วนประกอบเวลาวาดหน้าจอ
-                        let locName = rawItem.includes(':') ? rawItem.split(':')[0] : rawItem;
-                        let colors = rawItem.includes(':') ? rawItem.split(':')[1].split(',') : [];
+                        const pt = parsePt(rawItem);
+                        let locName = pt.loc;
+                        let colors = pt.colors;
 
                         if (i[locName]) {
                             let iconClass = '';
@@ -1537,7 +1648,10 @@
 
                             html += `
                                 <div class="flex flex-col items-center">
-                                    <span class="wave-icon text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
+                                    <div class="flex items-center gap-0.5">
+                                        <span class="wave-icon text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
+                                        ${pt.side ? `<span class="ml-0.5 min-w-[24px] h-6 md:min-w-[28px] md:h-7 px-1 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-sm md:text-base font-black leading-none flex items-center justify-center shadow-sm">${pt.side}</span>` : ''}
+                                    </div>
                                     ${colorDotsHtml}
                                 </div>
                             `;
@@ -1563,6 +1677,167 @@
             });
             con.innerHTML += html + `</div></div>`;
         });
+
+        // 🔀 แบบเดิม / แผนที่ / ไอคอน (แอดมินใช้แบบเดิมเสมอ · โหลด maps/*.js ไม่ได้ก็ไม่มีแผนที่)
+        const canMapView = !!(window.MapView && window.MAPS && window.MAPS[curM]);
+        const mode = isAdmin || (viewMode === 'map' && !canMapView) ? 'list' : viewMode;
+        document.getElementById('view-toggle').classList.toggle('hidden', isAdmin);
+        Object.keys(VIEW_TABS).forEach(m => {
+            const btn = document.getElementById(`view-btn-${m}`);
+            const t = VIEW_TABS[m];
+            btn.innerHTML = `<i class="fa-solid ${t.icon} mr-1 hidden sm:inline"></i>${t[uiLang()]}`;
+            btn.className = `py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black leading-tight transition ${mode === m ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`;
+            if (m === 'map') btn.classList.toggle('hidden', !canMapView);
+        });
+        leg.classList.toggle('hidden', mode !== 'icons');
+        con.classList.toggle('hidden', mode !== 'list');
+        renderMapView(mode === 'map');
+        renderTextView(mode === 'text');
+    }
+
+    // 🔤 ชื่อจุดเกิดเป็นตัวหนังสือ เช่น "โรงหลอม-ซ้าย" / "Foundry-Left"
+    function ptLabel(p, lang) {
+        let name = p.loc;
+        if (lang === 'th') {
+            const info = gData.mapsData[curM] && gData.mapsData[curM].points.find(x => x.id === p.loc);
+            if (info) name = info.name.th;
+        }
+        return p.side ? `${name}-${sideName(curM, p.loc, p.side, lang)}` : name;
+    }
+
+    function renderTextView(isTextView) {
+        const box = document.getElementById('text-container');
+        box.classList.toggle('hidden', !isTextView);
+        if (!isTextView) return;
+
+        let out = '';
+        [1,2,3,4].forEach(w => {
+            out += `<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200/80 dark:border-slate-700 overflow-hidden px-2 py-1 transition-colors">`;
+            [1,2,3].forEach(s => {
+                const limit = w === 4 ? 4 : 3;
+                const pts = (gData.spawnData[w] && gData.spawnData[w][s]) || [];
+                const isActive = (activeSubW === w && activeSubS === s);
+                let num = `${w}.${s}`;
+                if (isActive) {
+                    const mins = Math.floor(subWaveTimeRemaining / 60), secs = subWaveTimeRemaining % 60;
+                    num = `<span id="text-timer-el">${mins}:${secs < 10 ? '0' : ''}${secs}</span>`;
+                }
+
+                let cells = '';
+                for (let idx = 0; idx < limit; idx++) {
+                    const p = pts[idx] ? parsePt(pts[idx]) : null;
+                    let dots = '';
+                    if (p) p.colors.forEach(c => {
+                        const ac = auraColors.find(x => x.id === c);
+                        if (ac) dots += `<span class="inline-block w-2.5 h-2.5 rounded-full ${ac.hexClass} ml-1 align-middle"></span>`;
+                    });
+                    cells += `
+                        <div class="flex items-start gap-1.5 min-w-0">
+                            <span class="flex-shrink-0 w-5 h-5 mt-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-[10px] font-black text-gray-500 dark:text-gray-300 flex items-center justify-center">${idx + 1}</span>
+                            <div class="min-w-0 leading-tight">
+                                <div class="text-sm md:text-base font-black text-gray-800 dark:text-gray-100">${p ? ptLabel(p, uiLang()) + dots : '-'}</div>
+                            </div>
+                        </div>`;
+                }
+
+                out += `
+                    <div onclick="activateSubWave(${w}, ${s})" class="flex items-center gap-2 py-2.5 px-1 cursor-pointer rounded-xl border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 transition-all ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/80 ring-1 ring-indigo-400 my-1' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}">
+                        <div class="w-12 flex-shrink-0 text-center font-black text-sm tracking-widest ${isActive ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-300 dark:text-slate-600'}">${num}</div>
+                        <div class="flex-1 min-w-0 grid gap-2 ${limit === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}">${cells}</div>
+                        <button onclick="event.stopPropagation(); openWaveEdit(${w}, ${s})" title="Edit & Save this wave (แก้ไข/บันทึกจุดเกิดของเวฟนี้)" class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 dark:bg-indigo-400/15 border border-indigo-200/60 dark:border-indigo-500/30 active:scale-95 transition-all">
+                            <i class="fa-solid fa-pencil text-indigo-500 dark:text-indigo-400 text-sm"></i>
+                        </button>
+                    </div>`;
+            });
+            out += `</div>`;
+        });
+        box.innerHTML = out;
+    }
+
+    // 🗺️ มุมมองแผนที่ (ดูอย่างเดียว) — เลือกเวฟจากแถบเลข แทนรายการเวฟแบบเดิม
+    let viewMode = ['map', 'text', 'icons'].includes(localStorage.getItem('got_view')) ? localStorage.getItem('got_view') : 'list';
+    const VIEW_TABS = {
+        list:  { icon: 'fa-icons',       th: 'แบบไอคอน',      en: 'Icons' },
+        text:  { icon: 'fa-font',        th: 'แบบตัวหนังสือ', en: 'Text' },
+        map:   { icon: 'fa-map',         th: 'แผนที่',         en: 'Map' },
+        icons: { icon: 'fa-circle-info', th: 'คำแนะนำ',       en: 'Guide' }
+    };
+    let mapW = 1, mapS = 1;
+    const MAP_WAVES = [1,2,3,4].flatMap(w => [1,2,3].map(s => [w, s]));
+
+    function setViewMode(m) {
+        viewMode = m;
+        localStorage.setItem('got_view', m);
+        render();
+        if (m === 'map') scrollMapStrip();
+    }
+
+    // เลือกเวฟบนแถบ = เริ่มนับเวลา + อ่านเสียง เหมือนแตะเวฟย่อยในแบบเดิม (แตะเวฟเดิมซ้ำไม่ปิด)
+    function selectMapWave(w, s) {
+        mapW = w; mapS = s;
+        if (activeSubW !== w || activeSubS !== s) activateSubWave(w, s);
+        else render();
+        scrollMapStrip();
+    }
+
+    function stepMapWave(d) {
+        const next = MAP_WAVES[MAP_WAVES.findIndex(([w, s]) => w === mapW && s === mapS) + d];
+        if (next) selectMapWave(next[0], next[1]);
+    }
+
+    function scrollMapStrip() {
+        const strip = document.getElementById('map-strip');
+        const chip = document.getElementById(`map-chip-${mapW}-${mapS}`);
+        if (strip && chip) strip.scrollTo({ left: chip.offsetLeft - strip.offsetLeft - strip.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
+    }
+
+    function renderMapView(isMapView) {
+        document.getElementById('map-card').classList.toggle('hidden', !isMapView);
+        if (!isMapView) return;
+
+        // หมดเวลาแล้วเปลี่ยนเวฟอัตโนมัติ แผนที่เลื่อนตาม
+        if (activeSubW && activeSubS && (activeSubW !== mapW || activeSubS !== mapS)) {
+            mapW = activeSubW; mapS = activeSubS;
+            setTimeout(scrollMapStrip, 0);
+        }
+
+        const slots = (gData.spawnData[mapW] && gData.spawnData[mapW][mapS]) || [];
+        const limit = mapW === 4 ? 4 : 3;
+        const isRunning = activeSubW === mapW && activeSubS === mapS;
+        let timerHtml = '';
+        if (isRunning) {
+            const mins = Math.floor(subWaveTimeRemaining / 60), secs = subWaveTimeRemaining % 60;
+            timerHtml = `<span id="map-timer-el" class="text-xs font-black text-indigo-300">${mins}:${secs < 10 ? '0' : ''}${secs}</span>`;
+        }
+        document.getElementById('map-wave-label').innerHTML = `<span>Wave <span class="text-indigo-400">${mapW}.${mapS}</span></span>${timerHtml}`;
+        document.getElementById('map-wave-count').textContent = `${slots.filter(Boolean).length} / ${limit}`;
+        window.MapView.render(document.getElementById('map-svg'), curM, slots, uiLang());
+
+        // แถบเลขเวฟ — จุดใต้เลข = ลำดับ 1..n (วงกลวง = ยังว่าง)
+        const isAura = curM === 'hidden_temple';
+        let stripHtml = '';
+        MAP_WAVES.forEach(([w, s]) => {
+            const isSel = (w === mapW && s === mapS);
+            const pts = (gData.spawnData[w] && gData.spawnData[w][s]) || [];
+            let pips = '';
+            for (let idx = 0; idx < (w === 4 ? 4 : 3); idx++) {
+                const p = pts[idx] ? parsePt(pts[idx]) : null;
+                const c = p && isAura && p.colors[0] ? auraColors.find(ac => ac.id === p.colors[0]) : null;
+                pips += !p
+                    ? `<i class="w-1.5 h-1.5 rounded-full border ${isSel ? 'border-white/60' : 'border-slate-500'}"></i>`
+                    : `<i class="w-1.5 h-1.5 rounded-full ${c ? c.hexClass : (isSel ? 'bg-white' : 'bg-indigo-400')}"></i>`;
+            }
+            if (s === 1 && w > 1) stripHtml += `<span class="flex-shrink-0 w-px my-2 bg-slate-600"></span>`;
+            stripHtml += `
+                <button id="map-chip-${w}-${s}" onclick="selectMapWave(${w}, ${s})" class="flex-shrink-0 w-14 py-2 rounded-xl border flex flex-col items-center gap-1.5 transition ${isSel ? 'bg-indigo-500 border-indigo-500 text-white' : (pts.some(Boolean) ? 'border-slate-600' : 'border-dashed border-slate-600') + ' text-gray-100 hover:bg-slate-700'}">
+                    <span class="text-sm font-black leading-none">${w}.${s}</span>
+                    <span class="flex gap-0.5">${pips}</span>
+                </button>`;
+        });
+        document.getElementById('map-strip').innerHTML = stripHtml;
+        const idx = MAP_WAVES.findIndex(([w, s]) => w === mapW && s === mapS);
+        document.getElementById('map-prev').disabled = idx === 0;
+        document.getElementById('map-next').disabled = idx === MAP_WAVES.length - 1;
     }
 </script>
 </body>

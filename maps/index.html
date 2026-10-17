@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<title>Survival Map Board</title>
+<link rel="stylesheet" href="engine.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1><span id="mapTitle">Hidden Temple</span> <small id="mapSub">ตัวอย่างแผนที่ (ยังไม่ต่อข้อมูลจริง)</small></h1>
+  </header>
+
+  <!-- ========== เลือกด่าน ========== -->
+  <nav class="card maptabs" id="maptabs" aria-label="เลือกด่าน"></nav>
+
+  <!-- ========== แผนที่ ========== -->
+  <div class="card map-card" id="mapCard">
+    <div class="maphead">
+      <div class="now">Wave <span id="wlabel">1.1</span> <em id="wnote"></em></div>
+      <div class="mh-right">
+        <span class="count" id="counter">0 / 3</span>
+        <button class="clear" id="clear" type="button">ล้าง</button>
+      </div>
+    </div>
+
+    <svg class="map" id="mapSvg" viewBox="-18 -18 436 366" xmlns="http://www.w3.org/2000/svg" aria-label="แผนที่">
+      <defs>
+        <pattern id="tile" width="14" height="14" patternUnits="userSpaceOnUse">
+          <rect width="14" height="14" fill="var(--stone)"/>
+          <path d="M0,0 h14 M0,0 v14" stroke="var(--stone2)" stroke-width="1.2"/>
+        </pattern>
+        <pattern id="grass" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M3,13 l2,-5 M6,14 l1,-4 M11,12 l2,-5" stroke="var(--forest2)" stroke-width="1.1"
+                stroke-linecap="round" fill="none" opacity=".45"/>
+        </pattern>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-opacity=".35"/>
+        </filter>
+      </defs>
+      <g id="art-back"></g>
+      <g id="woods"></g>
+      <g id="art-mid"></g>
+      <g id="roads"></g>
+      <g id="art-front"></g>
+      <g id="rocks"></g>
+      <g id="layer-zones"></g>
+      <g id="layer-spawns"></g>
+    </svg>
+  </div>
+
+  <!-- ========== เลือกเวฟ ========== -->
+  <nav class="card wavenav" aria-label="เลือกเวฟ">
+    <button class="navbtn" id="prev" type="button" aria-label="เวฟก่อนหน้า"><b>‹</b><small>ก่อนหน้า</small></button>
+    <div class="strip" id="strip"></div>
+    <button class="navbtn" id="next" type="button" aria-label="เวฟต่อไป"><b>›</b><small>ต่อไป</small></button>
+  </nav>
+
+  <p class="hint">
+    แตะจุดเกิด → เลือก<b>ลำดับ</b> (เลือกได้หลายลำดับ)<span id="hintAura"> และ<b>สี</b>ของแต่ละลำดับ</span><br>
+    จุดเดียวเกิดซ้ำได้: เวฟ 1-3 ไม่เกิน 2 ครั้ง · เวฟ 4 ไม่เกิน 3 ครั้ง<br>
+    บนคอม: Shift+คลิกบนแผนที่ = อ่านพิกัด x/y ไว้บอกตำแหน่งจุดเกิด
+  </p>
+
+</div>
+
+<!-- ========== popup เลือกลำดับ + สี ========== -->
+<div class="sheet-bg" id="sheetBg" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sh-head">
+      <h3 id="shTitle">จุดเกิด</h3>
+      <span id="shWave">Wave 1.1</span>
+    </div>
+
+    <section class="sh-sec">
+      <div class="sh-label"><span>ลำดับการเกิด</span><em id="shOrderNote"></em></div>
+      <div class="orders" id="shOrders"></div>
+    </section>
+
+    <section class="sh-sec" id="shColorSec">
+      <div class="sh-label"><span>สีออร่า</span><em id="shColorNote"></em></div>
+      <div class="colors" id="shColors"></div>
+    </section>
+
+    <div class="sh-foot">
+      <button type="button" class="btn-rm" id="shRemove">ลบจุดนี้</button>
+      <button type="button" class="btn-done" id="shDone">เสร็จ</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- ไฟล์ด่าน: แต่ละไฟล์มีผัง ภาพ และข้อมูลตัวอย่างของด่านนั้น -->
+<script src="hidden_temple.js"></script>
+<script src="river_village.js"></script>
+<script src="frozen_valley.js"></script>
+<script src="broken_castle.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>
