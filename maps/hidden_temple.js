@@ -23,27 +23,27 @@ window.MAPS.hidden_temple = {
       icon: "🪦", name: { th: "สุสาน", en: "Cemetery" },
       x: 126, y: 90,
       spawns: [
-        { id: "L", x: 33,  y: 80, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 126,  y: 18, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 58,  y: 32, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 126, y: 18, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 33, y: 80, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     Courtyard: {
       icon: "⛲", name: { th: "ลานน้ำพุ", en: "Courtyard" },
       x: 300, y: 152,
       spawns: [
-        { id: "L", x: 332, y: 82,  name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 386, y: 204,  name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 378, y: 128, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 386, y: 204, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 332, y: 82, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     Pagoda: {
       icon: "🏯", name: { th: "เจดีย์", en: "Pagoda" },
       x: 118, y: 244,
       spawns: [
-        { id: "L", x: 37,  y: 225, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 118,  y: 318, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 48,  y: 288, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 118, y: 318, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 37, y: 225, name: { th: "ขวา",   en: "Right" } }
       ]
     }
   },

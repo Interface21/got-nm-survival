@@ -22,27 +22,27 @@ window.MAPS.broken_castle = {
       icon: "🏰", name: { th: "หอปราการ", en: "Keep" },
       x: 200, y: 110,
       spawns: [
-        { id: "L", x: 130, y: 22, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 272, y: 24, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 200, y: 14, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 272, y: 24, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 130, y: 22, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     Foundry: {
       icon: "⚒️", name: { th: "โรงหลอม", en: "Foundry" },
       x: 95, y: 238,
       spawns: [
-        { id: "L", x: 20, y: 170, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 70, y: 322, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 22, y: 260, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 70, y: 322, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 20, y: 170, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     "Burnt Garden": {
       icon: "🌸", name: { th: "สวนไหม้", en: "Burnt Garden" },
       x: 302, y: 238,
       spawns: [
-        { id: "L", x: 330, y: 322, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 380, y: 170, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 382, y: 262, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 380, y: 170, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 330, y: 322, name: { th: "ขวา",   en: "Right" } }
       ]
     }
   },

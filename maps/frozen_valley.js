@@ -24,18 +24,18 @@ window.MAPS.frozen_valley = {
       icon: "⚔️", name: { th: "คลังอาวุธ", en: "Armory" },
       x: 96, y: 122,
       spawns: [
-        { id: "L", x: 22, y: 190, name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 153, y: 28, name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 18, y: 100, name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 153, y: 28, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 22, y: 190, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     Hillside: {
       icon: "⛰️", name: { th: "เนินเขา", en: "Hillside" },
       x: 300, y: 100,
       spawns: [
-        { id: "L", x: 228, y: 40,  name: { th: "ซ้าย",  en: "Left" } },
+        { id: "L", x: 394, y: 150,  name: { th: "ซ้าย",  en: "Left" } },
         { id: "C", x: 372, y: 30,  name: { th: "กลาง", en: "Center" } },
-        { id: "R", x: 394, y: 150, name: { th: "ขวา",   en: "Right" } }
+        { id: "R", x: 228, y: 40, name: { th: "ขวา",   en: "Right" } }
       ]
     },
     Waterfalls: {
@@ -43,8 +43,8 @@ window.MAPS.frozen_valley = {
       x: 210, y: 264,
       /* น้ำตกมีจุดเกิด 2 จุด */
       spawns: [
-        { id: "L", x: 110, y: 315, name: { th: "ซ้าย", en: "Left" } },
-        { id: "R", x: 320, y: 312, name: { th: "ขวา",  en: "Right" } }
+        { id: "L", x: 320, y: 312, name: { th: "ซ้าย", en: "Left" } },
+        { id: "R", x: 110, y: 315, name: { th: "ขวา",  en: "Right" } }
       ]
     }
   },
