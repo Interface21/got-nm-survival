@@ -314,16 +314,16 @@
 
     <!-- Edit Modal (เพิ่ม Scroll หากจอมือถือเล็ก) -->
     <div id="edit-modal" onclick="if(event.target===this) closeEdit()" class="hidden absolute inset-0 z-50 bg-black/60 flex flex-col justify-end items-center p-0 backdrop-blur-sm transition-opacity">
-        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors" style="max-height: 82vh; max-height: 82dvh;">
-            <div class="flex justify-between items-center px-5 pt-5 pb-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
+        <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 w-full flex-1 min-h-0 rounded-t-3xl shadow-2xl max-w-md flex flex-col overflow-hidden border-t dark:border-slate-700 transition-colors">
+            <div class="flex justify-between items-center px-4 pt-3 pb-2 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 z-10 flex-shrink-0">
                 <div>
                     <h3 id="modal-title" class="font-black text-lg text-gray-800 dark:text-white">Edit Wave</h3>
                     <p id="modal-subtitle" class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Everyone can help record spawn points.<br/><span class="text-[10px] font-normal opacity-80">(ผู้เล่นทุกคนช่วยกันบันทึกจุดเกิดได้)</span></p>
                 </div>
                 <button onclick="closeEdit()" class="w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full flex items-center justify-center transition"><i class="fa-solid fa-xmark text-gray-600 dark:text-gray-300"></i></button>
             </div>
-            <div id="modal-body" class="flex flex-col gap-4 p-5 overflow-y-auto flex-1"></div>
-            <div class="bg-white dark:bg-slate-800 px-5 pt-3 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(1.25rem, env(safe-area-inset-bottom));">
+            <div id="modal-body" class="flex flex-col gap-2.5 p-3 overflow-y-auto flex-1"></div>
+            <div class="bg-white dark:bg-slate-800 px-4 pt-2 border-t border-gray-100 dark:border-slate-700 z-10 flex-shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.4)]" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
                 <button id="btn-confirm-edit" onclick="confirmEdit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-lg dark:shadow-none transition flex flex-col items-center">
                     <span class="text-sm">Save Wave</span>
                     <span class="text-[10px] font-normal opacity-80">บันทึกเวฟนี้</span>
@@ -873,12 +873,10 @@
             const spokenPointsTh = pts.map(item => {
                 if (!item) return "";
                 const p = parsePt(item);
-                let loc = p.loc;
-                let color = p.colors.join(',');
-
-                let thName = fullNameTh(curM, loc);
-                if (p.side) thName += ` ${sideName(curM, loc, p.side, 'th')}`;
-                let thColor = color && colorMapTh[color] ? colorMapTh[color] : color;
+                // คำย่อต่อท้ายด้วยฝั่ง เช่น "โรงซ้าย" (ไม่มีขีด) · สีออร่าพูดทีละสี
+                let thName = shortName(curM, p.loc, 'th').replace(/-/g, '');
+                if (p.side) thName += sideName(curM, p.loc, p.side, 'th');
+                const thColor = p.colors.map(c => colorMapTh[c] || c).join(' ');
                 return thColor ? `${thName} ${thColor}` : thName;
             }).filter(Boolean);
 
@@ -890,7 +888,7 @@
                 if (!item) return "";
                 const p = parsePt(item);
                 let loc = p.side ? `${p.loc} ${sideName(curM, p.loc, p.side, 'en')}` : p.loc;
-                let color = p.colors.join(',');
+                let color = p.colors.join(' ');
                 return color ? `${loc} ${color}` : loc;
             }).filter(Boolean);
 
@@ -1083,19 +1081,102 @@
 
         editingW = w;
         editingS = s;
-        // คัดลอกข้อมูลปัจจุบัน (ซึ่งอาจรวมเรื่องสีไว้ด้วย)
-        tempPts = [...(gData.spawnData[w][s] || [])];
-        renderEditModal();
-        document.getElementById('edit-modal').classList.remove('hidden');
+        // สถานะ ✓ ของรอบก่อนไม่ต้องโชว์ (จุดที่ยังค้างส่ง/ผิดพลาดเก็บไว้)
+        for (const k in ptState) if (k.startsWith(`${w}.${s}.`) && !ptBusy(ptState[k])) delete ptState[k];
+        tempPts = [];
+        syncEditFromServer();
 
-        // 🌟 ผู้เล่นทั่วไป: โหลดข้อมูลจากบันทึกล่าสุดมาตั้งต้นเสมอ (เผื่อมีคนอื่นบันทึกไปก่อนหน้า)
-        if (!isAdmin) {
-            const ok = await refreshLatestData();
-            if (ok && editingW === w && editingS === s) {
-                tempPts = [...(gData.spawnData[w][s] || [])];
-                renderEditModal();
-            }
+        // หน้าต่างเต็มจอใต้แถบ Tab · เปิดทุกครั้งเริ่มที่จุดที่ 1
+        const modal = document.getElementById('edit-modal');
+        modal.classList.remove('hidden');
+        const tabs = document.getElementById('view-toggle');
+        const top = tabs.offsetParent ? tabs.getBoundingClientRect().bottom - modal.getBoundingClientRect().top : 0;
+        modal.style.paddingTop = Math.max(12, top + 6) + 'px';
+        document.getElementById('modal-body').scrollTop = 0;
+
+        // 🌟 ผู้เล่นทั่วไป: โหลดบันทึกล่าสุด แล้วอัปเดตเฉพาะจุดที่ผู้เล่นยังไม่ได้แตะ (จุดที่เพิ่งเลือกไม่หลุด)
+        if (!isAdmin && await refreshLatestData()) syncEditFromServer();
+    }
+
+    // 📍 ผู้เล่นทั่วไป: บันทึกทีละจุด หลังหยุดกด PT_DELAY · ค่าเท่าบันทึกล่าสุด = ไม่ส่ง
+    const PT_DELAY = 1500;
+    const ptState = {};   // "w.s.i" → { value, ver, timer, status: wait | saving | saved | error }
+    const ptKey = (w, s, i) => `${w}.${s}.${i}`;
+    const ptBusy = st => !!st && ['wait', 'saving', 'error'].includes(st.status);
+    const PT_STATUS = {
+        wait:   ['fa-clock text-gray-400', 'รอบันทึก', 'Pending'],
+        saving: ['fa-circle-notch fa-spin text-indigo-500', 'กำลังบันทึก', 'Saving'],
+        saved:  ['fa-circle-check text-emerald-500', 'บันทึกแล้ว', 'Saved'],
+        error:  ['fa-triangle-exclamation text-rose-500', 'ไม่สำเร็จ แตะเพื่อลองใหม่', 'Failed, tap to retry']
+    };
+
+    // ค่าในหน้าต่าง = บันทึกล่าสุด ยกเว้นจุดที่ผู้เล่นแก้อยู่
+    function syncEditFromServer() {
+        if (editingW === null) return;
+        const server = gData.spawnData[editingW][editingS] || [];
+        for (let i = 0; i < (editingW === 4 ? 4 : 3); i++) {
+            const st = ptState[ptKey(editingW, editingS, i)];
+            tempPts[i] = ptBusy(st) ? st.value : (server[i] || "");
         }
+        renderEditModal();
+    }
+
+    function setPoint(i, value) {
+        tempPts[i] = value;
+        if (!isAdmin) {
+            const w = editingW, s = editingS, k = ptKey(w, s, i);
+            const st = ptState[k] || (ptState[k] = { ver: 0 });
+            clearTimeout(st.timer);
+            Object.assign(st, { value, ver: st.ver + 1, status: 'wait', timer: setTimeout(() => savePoint(w, s, i), PT_DELAY) });
+        }
+        renderEditModal();
+    }
+
+    async function savePoint(w, s, i) {
+        const st = ptState[ptKey(w, s, i)];
+        if (!st) return;
+        clearTimeout(st.timer);
+        st.timer = null;
+        const ver = st.ver;
+        const isOpen = () => editingW === w && editingS === s;
+
+        if (st.value === ((gData.spawnData[w][s] || [])[i] || "")) {
+            st.status = '';
+            if (isOpen()) renderEditModal();
+            return;
+        }
+
+        st.status = 'saving';
+        if (isOpen()) renderEditModal();
+        const mapNameEn = gData.mapsData[curM] ? gData.mapsData[curM].name.en : curM;
+        let res;
+        try {
+            res = await apiCall('saveSpawnPoint', w, s, i, st.value, mapNameEn);
+        } catch (e) {
+            res = { status: 'error', message: e.toString() };
+        }
+
+        if (res.status === 'success') {
+            if (st.ver === ver) st.status = 'saved';
+            applyLatest(res.latest);
+            render();
+            if (isOpen()) syncEditFromServer();
+            return;
+        }
+
+        // ด่านถูกเปลี่ยน/ยังไม่เลือกด่าน: ทิ้งที่ค้างทั้งหมด แล้วโหลดใหม่
+        if (res.code === 'no_map' || res.code === 'map_mismatch') {
+            for (const k in ptState) { clearTimeout(ptState[k].timer); delete ptState[k]; }
+            closeEdit();
+            await refreshLatestData();
+            if (res.code === 'no_map') openMapPicker(true);
+            else showModal('error', 'Map Changed (ด่านถูกเปลี่ยน)', res.message);
+            return;
+        }
+
+        if (st.ver === ver) st.status = 'error';
+        if (isOpen()) renderEditModal();
+        else showToast(`Wave ${w}.${s} #${i + 1}: ${res.message || 'Save failed (บันทึกไม่สำเร็จ)'}`, 'error');
     }
 
     // เผื่อโค้ดเก่าเรียกใช้ชื่อเดิม
@@ -1108,14 +1189,14 @@
         if (subtitleEl) {
             subtitleEl.innerHTML = isAdmin
                 ? 'Admin edit — press Save to store the whole map.<br/><span class="text-[10px] font-normal opacity-80">(แอดมินแก้ไข แล้วกดปุ่ม Save เพื่อบันทึกทั้งด่าน)</span>'
-                : 'Data loaded from the latest record. Saving updates it for everyone.<br/><span class="text-[10px] font-normal opacity-80">(ข้อมูลตั้งต้นจากบันทึกล่าสุด เมื่อบันทึกจะอัปเดตให้ผู้เล่นทุกคนทันที)</span>';
+                : 'Auto-saves each point 1.5s after you pick.<br/><span class="text-[10px] font-normal opacity-80">(เลือกแล้วบันทึกให้ทุกคนอัตโนมัติใน 1.5 วินาที)</span>';
         }
 
         const confirmBtn = document.getElementById('btn-confirm-edit');
         if (confirmBtn) {
             confirmBtn.innerHTML = isAdmin
                 ? '<span class="text-sm">Update Wave</span><span class="text-[10px] font-normal opacity-80">อัปเดตเวฟนี้ (ยังไม่บันทึกลงระบบ)</span>'
-                : '<span class="text-sm"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Save Wave</span><span class="text-[10px] font-normal opacity-80">บันทึกเวฟนี้ให้ทุกคน</span>';
+                : '<span class="text-sm"><i class="fa-solid fa-check mr-1"></i> Done <span class="font-normal opacity-80">(เสร็จ)</span></span>';
         }
 
         const body = document.getElementById('modal-body');
@@ -1133,7 +1214,14 @@
             row.className = "bg-gray-50/50 dark:bg-slate-900/50 p-2 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors";
             
             // 1. ส่วนเลือกสถานที่
-            row.innerHTML = `<div class="text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-2 uppercase tracking-wide px-1">Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></div>`;
+            // สถานะบันทึกของจุดนี้ (ผู้เล่นทั่วไป) · ผิดพลาดแตะลองใหม่ได้
+            const st = isAdmin ? null : ptState[ptKey(editingW, editingS, i)];
+            const stInfo = st && PT_STATUS[st.status];
+            const stText = stInfo ? `<i class="fa-solid ${stInfo[0]}"></i> ${stInfo[uiLang() === 'th' ? 1 : 2]}` : '';
+            const stHtml = !stInfo ? '' : st.status === 'error'
+                ? `<button onclick="savePoint(${editingW}, ${editingS}, ${i})" class="text-[10px] font-bold text-rose-500 normal-case tracking-normal">${stText}</button>`
+                : `<span class="text-[10px] font-medium text-gray-400 normal-case tracking-normal">${stText}</span>`;
+            row.innerHTML = `<div class="flex items-center justify-between gap-2 text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-1.5 uppercase tracking-wide px-1"><span>Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></span>${stHtml}</div>`;
             const grid = document.createElement('div');
             grid.className = "grid grid-cols-3 gap-2";
             
@@ -1141,24 +1229,18 @@
                 const btn = document.createElement('button');
                 const isSel = (currentLoc === enName);
                 
-                btn.className = `p-1.5 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white dark:bg-slate-800 dark:text-white shadow-sm transform scale-[1.03]' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
+                btn.className = `px-1.5 py-1 rounded-xl border-2 transition-all flex flex-col items-center gap-0.5 ${isSel ? 'border-indigo-500 bg-white dark:bg-slate-800 dark:text-white shadow-sm transform scale-[1.03]' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
                 
                 const thName = fullNameTh(curM, enName);
                 
                 btn.innerHTML = `
-                    <span class="text-2xl ${isSel?'':'opacity-60'} leading-none mb-1">${mapIcons[curM][enName]}</span>
+                    <span class="text-xl ${isSel?'':'opacity-60'} leading-none mb-0.5">${mapIcons[curM][enName]}</span>
                     <span class="text-[10px] font-bold ${isSel?'text-indigo-700 dark:text-indigo-400':'text-gray-700 dark:text-gray-300'} leading-tight">${enName}</span>
                     <span class="text-[9px] font-normal ${isSel?'text-indigo-500 dark:text-indigo-300':'text-gray-400 dark:text-gray-400'} leading-tight">${thName}</span>
                 `;
                 
-                btn.onclick = () => { 
-                    if (isSel) {
-                        tempPts[i] = ""; // ถ้ายกเลิก ก็เคลียร์ทั้งสีและตำแหน่ง
-                    } else {
-                        tempPts[i] = enName; // ถ้าเลือกใหม่ ก็ล้างสีเก่าทิ้งให้เริ่มเลือกสีใหม่
-                    }
-                    renderEditModal(); 
-                };
+                // ยกเลิก = เคลียร์ทั้งฝั่งและสี · เลือกใหม่ = ล้างฝั่ง/สีเก่าให้เริ่มเลือกใหม่
+                btn.onclick = () => setPoint(i, isSel ? "" : enName);
                 grid.appendChild(btn);
             });
             row.appendChild(grid);
@@ -1167,7 +1249,7 @@
             const sides = currentLoc ? sidesOf(curM, currentLoc) : [];
             if (sides.length) {
                 const sideSection = document.createElement('div');
-                sideSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between gap-2 px-1";
+                sideSection.className = "mt-2 pt-1.5 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between gap-2 px-1";
                 sideSection.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">Side (ฝั่ง):</span>`;
 
                 const sideBtns = document.createElement('div');
@@ -1177,10 +1259,7 @@
                     const sBtn = document.createElement('button');
                     sBtn.className = `min-w-[48px] px-2 py-1 rounded-lg border-2 transition-all flex flex-col items-center leading-tight ${isSideSel ? 'border-indigo-500 bg-indigo-500 text-white shadow-sm' : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}`;
                     sBtn.innerHTML = `<span class="text-[11px] font-black">${sp.id}</span><span class="text-[9px] font-normal">${sp.name[uiLang()]}</span>`;
-                    sBtn.onclick = () => {
-                        tempPts[i] = buildPt({ loc: currentLoc, side: isSideSel ? "" : sp.id, colors: currentColors });
-                        renderEditModal();
-                    };
+                    sBtn.onclick = () => setPoint(i, buildPt({ loc: currentLoc, side: isSideSel ? "" : sp.id, colors: currentColors }));
                     sideBtns.appendChild(sBtn);
                 });
 
@@ -1193,7 +1272,7 @@
                 const maxColors = (editingW === 4) ? 2 : 1;
                 
                 const colorSection = document.createElement('div');
-                colorSection.className = "mt-3 pt-2 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between px-1";
+                colorSection.className = "mt-2 pt-1.5 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between px-1";
                 
                 const label = document.createElement('div');
                 label.innerHTML = `<span class="text-[10px] font-bold text-gray-500 dark:text-gray-300">Aura Color (ออร่าสี):</span> <span class="text-[9px] text-gray-400 dark:text-gray-400">(Max ${maxColors} / สูงสุด ${maxColors})</span>`;
@@ -1224,8 +1303,7 @@
                             }
                         }
                         
-                        tempPts[i] = buildPt({ loc: currentLoc, side: currentSide, colors: newColors });
-                        renderEditModal();
+                        setPoint(i, buildPt({ loc: currentLoc, side: currentSide, colors: newColors }));
                     };
                     colorBtns.appendChild(cBtn);
                 });
@@ -1242,15 +1320,17 @@
         document.getElementById('edit-modal').classList.add('hidden'); 
         editingW = null;
         editingS = null;
+        // ปิดก่อนครบเวลา = ส่งจุดที่ค้างทันที
+        for (const k in ptState) if (ptState[k].timer) savePoint(...k.split('.').map(Number));
     }
     
-    async function confirmEdit() {
-        const cleanedPts = tempPts.map(x => x ? x : "");
+    function confirmEdit() {
         const w = editingW, s = editingS;
         if (!w || !s) return;
 
         // 👑 แอดมิน: แก้ไขในเครื่องก่อน แล้วกดปุ่ม Save เพื่อบันทึกทั้งด่าน
         if (isAdmin) {
+            const cleanedPts = tempPts.map(x => x ? x : "");
             if(JSON.stringify(gData.spawnData[w][s]) !== JSON.stringify(cleanedPts)) {
                 hasUnsavedChanges = true;
             }
@@ -1260,60 +1340,9 @@
             return;
         }
 
-        // 🙋 ผู้เล่นทั่วไป: บันทึกลงข้อมูลหลักทันที
-        if (cleanedPts.filter(Boolean).length === 0) {
-            showToast('Please select at least 1 spawn point! (กรุณาเลือกจุดเกิดอย่างน้อย 1 จุด)', 'error');
-            return;
-        }
-
-        const pointsStr = cleanedPts.join('|');
-        if (pointsStr === (gData.spawnData[w][s] || []).join('|')) {
-            closeEdit();
-            showToast('Data matches the latest record. (ข้อมูลตรงกับบันทึกล่าสุดแล้ว)');
-            return;
-        }
-
-        const mapNameEn = gData.mapsData[curM] ? gData.mapsData[curM].name.en : curM;
-        const btn = document.getElementById('btn-confirm-edit');
-        const oldHtml = btn ? btn.innerHTML : '';
-        if (btn) {
-            btn.innerHTML = '<span class="text-sm"><i class="fa-solid fa-circle-notch fa-spin"></i> Saving... (กำลังบันทึก...)</span>';
-            btn.disabled = true;
-        }
-
-        try {
-            const res = await apiCall('saveWaveData', w, s, pointsStr, mapNameEn);
-
-            if (res.status === 'success') {
-                if (!applyLatest(res.latest)) {
-                    gData.spawnData[w][s] = cleanedPts;
-                    gData.hasWaveData = true;
-                    gData.canChangeMap = false;
-                }
-                closeEdit();
-                render();
-                showToast(`✅ Wave ${w}.${s} saved! (บันทึกเวฟ ${w}.${s} เรียบร้อยแล้ว)`);
-            } else if (res.code === 'no_map') {
-                closeEdit();
-                await refreshLatestData();
-                openMapPicker(true);
-            } else if (res.code === 'map_mismatch') {
-                closeEdit();
-                await refreshLatestData();
-                showModal('error', 'Map Changed (ด่านถูกเปลี่ยน)', res.message);
-            } else {
-                showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', res.message || 'Cannot save wave data (ไม่สามารถบันทึกข้อมูลได้)');
-            }
-        } catch(e) {
-            showModal('error', 'Save Failed (บันทึกไม่สำเร็จ)', e.toString());
-        } finally {
-            if (btn) {
-                btn.innerHTML = oldHtml;
-                btn.disabled = false;
-            }
-        }
+        // 🙋 ผู้เล่นทั่วไป: บันทึกทีละจุดอยู่แล้ว ปุ่มนี้แค่ปิด (จุดที่ค้างส่งทันทีใน closeEdit)
+        closeEdit();
     }
-
 
     function clearData() { 
         showModal(
@@ -1360,7 +1389,7 @@
                 hasUnsavedChanges = false;
                 gData.isNewWeek = false;
                 gData.isMapSet = true;
-                gData.hasWaveData = [1,2,3,4].some(w => [1,2,3].some(s => (gData.spawnData[w] && gData.spawnData[w][s] || []).length > 0));
+                gData.hasWaveData = [1,2,3,4].some(w => [1,2,3].some(s => (gData.spawnData[w] && gData.spawnData[w][s] || []).some(Boolean)));
                 gData.canChangeMap = !gData.hasWaveData;
                 gData.currentMapId = curM;
                 originalMapId = curM;
