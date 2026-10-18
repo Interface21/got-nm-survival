@@ -72,20 +72,20 @@ function drawRocks(g, M) {
   });
 }
 
-function drawZones(g, M, lang) {
+function drawZones(g, M, labelOf) {
   for (const locId in M.locs) {
     const L = M.locs[locId];
     g.appendChild(el("circle", {
       cx: L.x, cy: L.y, r: 46, fill: "var(--text)", "fill-opacity": ".05",
       stroke: "var(--muted)", "stroke-width": 1.8, "stroke-dasharray": "5 5", "stroke-opacity": ".6"
     }));
-    // ชื่อตามภาษาที่เลือก (th / en) ช่วงล่างของวง (หมุดของข้อมูลที่ไม่มีฝั่งอยู่กลางวง)
+    // ชื่อจาก labelOf (index.html ส่งชื่อจากชีท/คำย่อตามภาษา) ช่วงล่างของวง (หมุดของข้อมูลที่ไม่มีฝั่งอยู่กลางวง)
     const t = el("text", {
       x: L.x, y: L.y + 33, "text-anchor": "middle",
       "font-size": 13, "font-weight": 800, fill: "#fff",
       stroke: "rgba(15,23,42,.85)", "stroke-width": 4, "paint-order": "stroke", "stroke-linejoin": "round"
     });
-    t.textContent = L.name[lang] || L.name.en;
+    t.textContent = labelOf(locId);
     g.appendChild(t);
   }
 }
@@ -166,12 +166,13 @@ function drawSpawns(g, M, slots) {
   }
 }
 
-/* วาดฉากใหม่เฉพาะตอนเปลี่ยนด่าน/ภาษา · หมุดวาดใหม่ทุกครั้ง · lang = "th" | "en" */
-function render(svg, mapId, slots, lang = "th") {
+/* วาดฉากใหม่เฉพาะตอนเปลี่ยนด่าน/ชื่อ · หมุดวาดใหม่ทุกครั้ง · labelOf(locId) = ชื่อที่แสดงบนแผนที่ */
+function render(svg, mapId, slots, labelOf = locId => locId) {
   const M = (window.MAPS || {})[mapId];
   if (!M) return false;
 
-  if (svg.dataset.map !== mapId + ":" + lang) {
+  const cacheKey = mapId + ":" + Object.keys(M.locs).map(labelOf).join("|");
+  if (svg.dataset.map !== cacheKey) {
     svg.removeAttribute("style");
     for (const k in M.palette) svg.style.setProperty("--" + k, M.palette[k]);
     svg.innerHTML = DEFS +
@@ -180,9 +181,9 @@ function render(svg, mapId, slots, lang = "th") {
     drawTrees(svg.querySelector(".mv-woods"), M);
     drawRoads(svg.querySelector(".mv-roads"), M);
     drawRocks(svg.querySelector(".mv-rocks"), M);
-    drawZones(svg.querySelector(".mv-zones"), M, lang);
+    drawZones(svg.querySelector(".mv-zones"), M, labelOf);
     svg.setAttribute("aria-label", "แผนที่ " + M.name.en);
-    svg.dataset.map = mapId + ":" + lang;
+    svg.dataset.map = cacheKey;
   }
   drawSpawns(svg.querySelector(".mv-spawns"), M, slots || []);
   return true;
