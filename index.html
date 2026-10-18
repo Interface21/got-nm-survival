@@ -65,6 +65,8 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.7);
         }
         ::-webkit-scrollbar { display: none; }
+        /* ปิดการแตะ 2 ครั้งแล้วจอขยายบนมือถือ (iOS ไม่สนใจ user-scalable=no) · ยังเลื่อนหน้าได้ตามปกติ */
+        * { touch-action: manipulation; }
         /* 🗺️ แผนที่ (maps/viewer.js) — ภาพแผนที่เป็นโทนมืดทั้งสองธีม */
         .map-view {
             --text: #e2e8f0; --muted: #94a3b8; --panel: #1e293b; --spawn: #94a3b8; --accent: #818cf8;
