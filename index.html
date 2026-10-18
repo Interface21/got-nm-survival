@@ -60,14 +60,6 @@
         @media (min-width: 1024px) {
             #app { max-width: 1100px; }
         }
-        /* โหมดเต็มจอ (Fullscreen API) ให้กินพื้นที่ทั้งหมดของจอ iPad */
-        #app:fullscreen, #app:-webkit-full-screen {
-            max-width: 100%;
-            width: 100%;
-            height: 100%;
-            max-height: 100%;
-            border-radius: 0;
-        }
         html.dark #app {
             background-color: #0F172A;
             box-shadow: 0 0 50px rgba(0,0,0,0.7);
@@ -101,12 +93,15 @@
     <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
 
         <!-- 🔀 สลับมุมมอง: แบบไอคอน / ตัวหนังสือ / แผนที่ / ตั้งค่า -->
-        <div id="view-toggle" class="hidden flex-shrink-0 grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
-            <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
-            <button id="view-btn-list" onclick="setViewMode('list')"></button>
-            <button id="view-btn-text" onclick="setViewMode('text')"></button>
-            <button id="view-btn-map" onclick="setViewMode('map')"></button>
-            <button id="view-btn-settings" onclick="setViewMode('settings')"></button>
+        <!-- ตรึงไว้ด้านบนตอนเลื่อน: กรอบนอกสีพื้นแอป ตรึงที่ -12px (= padding ของกล่องเลื่อน) ปิดช่องเหนือแถบ ไม่ให้เห็นเนื้อหาเลื่อนผ่าน -->
+        <div id="view-toggle" class="hidden sticky -top-3 z-30 -mt-3 pt-3 flex-shrink-0 bg-[#F4F4F5] dark:bg-[#0F172A] transition-colors">
+            <div class="grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+                <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
+                <button id="view-btn-list" onclick="setViewMode('list')"></button>
+                <button id="view-btn-text" onclick="setViewMode('text')"></button>
+                <button id="view-btn-map" onclick="setViewMode('map')"></button>
+                <button id="view-btn-settings" onclick="setViewMode('settings')"></button>
+            </div>
         </div>
 
         <!-- แถบด่าน / ผู้ใช้ / สัปดาห์ — อยู่ในแท็บตั้งค่า (แอดมินเห็นตลอด) -->
@@ -147,10 +142,6 @@
             <button onclick="toggleVoice();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
                 <span class="flex items-center gap-2"><i id="menu-voice-icon" class="fa-solid fa-volume-xmark text-emerald-500 w-4 text-center"></i> Voice (เสียงบอกจุดเกิด)</span>
                 <span id="menu-voice-badge" class="px-2 py-0.5 rounded-md text-[10px] font-black">OFF</span>
-            </button>
-            <button onclick="toggleFullscreen();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
-                <span class="flex items-center gap-2"><i id="menu-fs-icon" class="fa-solid fa-expand text-violet-500 w-4 text-center"></i> Fullscreen (เต็มจอ)</span>
-                <span id="menu-fs-badge" class="text-[10px] text-gray-400 font-medium">OFF</span>
             </button>
             <button onclick="toggleLang();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
                 <span class="flex items-center gap-2"><i class="fa-solid fa-language text-cyan-500 w-4 text-center"></i> Language (ภาษา)</span>
@@ -235,91 +226,23 @@
             
             <!-- THAI CONTENT -->
             <div id="feat-th">
-                <h3 class="font-black text-xl text-gray-800 dark:text-white mb-1">อัปเดตฟีเจอร์ใหม่! <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 align-middle">What's New</span></h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 font-medium">ยกระดับการเล่น Nightmare Survival ให้สะดวกและแม่นยำยิ่งขึ้น<br/><span class="text-[10px] font-normal opacity-80">(Enhance your Nightmare Survival gameplay experience)</span></p>
-                
-                <div class="flex flex-col gap-3.5 mb-6">
-                    <!-- Item 1: Dark Mode -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-moon text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">ระบบ Dark Mode ถนอมสายตา (Eye-Care Dark Mode)</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">เลือกสลับโหมดมืดหรือสว่างได้ตามใจชอบในเมนูบาร์ พร้อมบันทึกค่าการใช้งานของท่านไว้ในเครื่องโดยอัตโนมัติ (Switch themes seamlessly with auto-saved preferences)</p>
-                        </div>
-                    </div>
-
-                    <!-- Item 2: Voice Assistant -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-volume-high text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">ผู้ช่วยเสียงบอกจุดเกิด (Voice Assistant)</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">คลิกเลือกเวฟย่อย ระบบจะอ่านชื่อจุดเกิดให้ทันที! รองรับการเลือกสำเนียงเสียงอ่านได้ทั้ง <span class="font-bold text-cyan-600 dark:text-cyan-400">ภาษาไทย / English</span></p>
-                        </div>
-                    </div>
-
-                    <!-- Item 3: Auto Countdown -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-stopwatch text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">นับเวลาถอยหลังและเปลี่ยนเวฟอัตโนมัติ (Smart Auto Countdown)</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">เมื่อคลิกเวฟย่อย จะนับถอยหลังอัตโนมัติ (เวฟ 1-3 นับ 1.30 นาที / เวฟ 4 นับ 2.00 นาที) พร้อมเปลี่ยนเวฟให้อัตโนมัติเมื่อหมดเวลา และหากคลิกเลือกเวฟเอง ระบบจะเริ่มนับใหม่ให้ทันที</p>
-                        </div>
-                    </div>
-                </div>
-
+                <h3 class="font-black text-xl text-gray-800 dark:text-white mb-1">อัปเดตเวอร์ชัน 3 <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 align-middle">v3.0</span></h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 font-medium">สิ่งที่เปลี่ยนในเวอร์ชันนี้</p>
+                <!-- รายการจาก FEATURES_V3 -->
+                <div id="feat-th-list" class="flex flex-col gap-3.5 mb-6"></div>
                 <button onclick="closeFeatureModal(true)" class="w-full bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white p-3.5 rounded-xl font-black transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20">
-                    <span>🚀 Got it & Get Started (รับทราบและเริ่มต้นใช้งาน)</span>
+                    <span>รับทราบ</span>
                 </button>
             </div>
 
             <!-- ENGLISH CONTENT -->
             <div id="feat-en" class="hidden">
-                <h3 class="font-black text-xl text-gray-800 dark:text-white mb-1">New Features! <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 align-middle">v2.0</span></h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 font-medium">Enhance your Nightmare Survival gameplay experience.</p>
-                
-                <div class="flex flex-col gap-3.5 mb-6">
-                    <!-- Item 1: Dark Mode -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-moon text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">Eye-Care Dark Mode</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">Switch seamlessly between dark and light themes from the top menu. Your preference is automatically saved on your device.</p>
-                        </div>
-                    </div>
-
-                    <!-- Item 2: Voice Assistant -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-volume-high text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">Voice Assistant (Spawn Announcer)</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">Click any sub-wave to instantly hear spawn locations announced out loud! Supports both <span class="font-bold text-cyan-600 dark:text-cyan-400">Thai / English</span> accents.</p>
-                        </div>
-                    </div>
-
-                    <!-- Item 3: Auto Countdown -->
-                    <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <i class="fa-solid fa-stopwatch text-base"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">Smart Auto Countdown & Transitions</h4>
-                            <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">Clicking a sub-wave starts a live timer (1:30 for Waves 1-3, 2:00 for Wave 4) and auto-advances when finished. Clicking any wave manually resets the countdown.</p>
-                        </div>
-                    </div>
-                </div>
-
+                <h3 class="font-black text-xl text-gray-800 dark:text-white mb-1">Version 3 update <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 align-middle">v3.0</span></h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 font-medium">What changed in this version</p>
+                <!-- รายการจาก FEATURES_V3 -->
+                <div id="feat-en-list" class="flex flex-col gap-3.5 mb-6"></div>
                 <button onclick="closeFeatureModal(true)" class="w-full bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white p-3.5 rounded-xl font-black transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20">
-                    <span>🚀 Got it & Get Started</span>
+                    <span>Got it</span>
                 </button>
             </div>
         </div>
@@ -529,7 +452,7 @@
                 openMapPicker(true);
             }
 
-            if (gData.isMapSet && !localStorage.getItem('got_feature_v2_seen')) {
+            if (gData.isMapSet && !localStorage.getItem('got_feature_v3_seen')) {
                 setTimeout(() => openFeatureModal(), 600);
             }
         } catch(err) {
@@ -546,7 +469,38 @@
         }
     });
 
+    // ✨ What's New v3 — เปิดเองครั้งแรกต่อเครื่อง (got_feature_v3_seen) · เปิดซ้ำได้จากแท็บตั้งค่า
+    const FEATURES_V3 = [
+        { icon: 'fa-location-crosshairs', box: 'bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-500',
+          th: ['บันทึกฝั่งจุดเกิด L / C / R', 'ตอนบันทึกเวฟ เลือกสถานที่แล้วเลือกฝั่ง ซ้าย (L) กลาง (C) หรือขวา (R) ข้อมูลเก่าที่ยังไม่มีฝั่งก็ยังแสดงได้'],
+          en: ['Spawn side L / C / R', 'When saving a wave, pick a location, then its side: Left (L), Center (C) or Right (R). Older records without a side still show.'] },
+        { icon: 'fa-table-columns', box: 'bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-500',
+          th: ['แท็บใหม่ 4 แบบ', 'แบบไอคอน (มีป้าย L/C/R), แบบตัวหนังสือ (ชื่อย่อ เช่น โรง-ซ้าย), แผนที่ และตั้งค่า แถบแท็บตรึงอยู่ด้านบนเสมอ'],
+          en: ['Four tabs', 'Icons (with L/C/R badges), Text (short names such as Forge-L), Map and Settings. The tab bar stays pinned at the top.'] },
+        { icon: 'fa-map', box: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500',
+          th: ['แผนที่จุดเกิด', 'เลือกเลขเวฟใต้แผนที่เพื่อดูลำดับการเกิดบนจุดจริง ถ้ายังไม่ได้ระบุฝั่ง เลขจะอยู่กลางสถานที่ แผนที่ใช้ดูอย่างเดียว บันทึกผ่านปุ่มดินสอ'],
+          en: ['Spawn map', 'Pick a wave number under the map to see spawn order on the actual spawn points. Points with no side sit in the middle of the location. The map is view-only; save with the pencil button.'] },
+        { icon: 'fa-language', box: 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-500',
+          th: ['ภาษา TH / EN', 'เปลี่ยนในแท็บตั้งค่า มีผลกับชื่อจุดเกิด แท็บ แผนที่ และเสียงอ่าน หน้าจอใช้ชื่อย่อ ส่วนหน้าบันทึกและเสียงใช้ชื่อเต็ม'],
+          en: ['TH / EN language', 'Switch it in Settings. It changes spawn names, tabs, the map and voice. Screens use short names; the save screen and voice use full names.'] },
+        { icon: 'fa-gear', box: 'bg-rose-500/10 dark:bg-rose-500/20 text-rose-500',
+          th: ['แท็บตั้งค่า', 'รวมชื่อด่าน จำนวนผู้ใช้ สัปดาห์ คำอธิบายไอคอนและคำย่อของด่านนี้ เสียง ภาษา ธีม แชร์ QR และแอดมิน แถบด้านบนเดิมเอาออกแล้ว จึงเห็นเวฟได้มากขึ้น'],
+          en: ['Settings tab', "Map name, user count, week, this map's icon and short-name guide, voice, language, theme, QR sharing and admin login. The old top bar is gone, so more waves fit on screen."] }
+    ];
+
     function openFeatureModal() {
+        ['th', 'en'].forEach(lang => {
+            document.getElementById(`feat-${lang}-list`).innerHTML = FEATURES_V3.map(f => `
+                <div class="flex gap-3.5 items-start p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/50 border border-gray-100/80 dark:border-slate-700">
+                    <div class="w-9 h-9 rounded-xl ${f.box} flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <i class="fa-solid ${f.icon} text-base"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xs text-gray-800 dark:text-gray-100 mb-0.5">${f[lang][0]}</h4>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-300 leading-relaxed">${f[lang][1]}</p>
+                    </div>
+                </div>`).join('');
+        });
         const modal = document.getElementById('feature-modal');
         if (modal) modal.classList.remove('hidden');
         switchFeatureModalLang(speechLang === 'EN' ? 'EN' : 'TH');
@@ -575,7 +529,7 @@
         const modal = document.getElementById('feature-modal');
         if (modal) modal.classList.add('hidden');
         if (save) {
-            localStorage.setItem('got_feature_v2_seen', 'true');
+            localStorage.setItem('got_feature_v3_seen', 'true');
         }
     }
 
@@ -619,39 +573,6 @@
             menuThemeBadge.textContent = isDark ? 'Light Mode' : 'Dark Mode';
         }
     }
-
-    // 🖥️ โหมดเต็มจอ (รองรับ iPad / Desktop)
-    function toggleFullscreen() {
-        const el = document.getElementById('app');
-        const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
-        try {
-            if (!fsEl) {
-                if (el.requestFullscreen) el.requestFullscreen();
-                else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-                else {
-                    showToast('Fullscreen not supported. Add to Home Screen for full screen. (อุปกรณ์นี้ไม่รองรับเต็มจอ ให้ใช้ "เพิ่มไปยังหน้าจอโฮม" แทน)', 'error');
-                    return;
-                }
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-            }
-        } catch(e) {
-            showToast('Fullscreen error: ' + e.toString(), 'error');
-        }
-    }
-
-    function updateFullscreenButton() {
-        const icon = document.getElementById('menu-fs-icon');
-        const badge = document.getElementById('menu-fs-badge');
-        if (!icon || !badge) return;
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        icon.className = `fa-solid ${isFs ? 'fa-compress' : 'fa-expand'} text-violet-500 w-4 text-center`;
-        badge.textContent = isFs ? 'ON' : 'OFF';
-    }
-
-    document.addEventListener('fullscreenchange', updateFullscreenButton);
-    document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
 
     function downloadQR() {
         const canvas = document.getElementById('qr-canvas');
@@ -1479,7 +1400,6 @@
         updateLangButton();
         updateRateUI();
         updateThemeUI();
-        updateFullscreenButton();
 
         document.getElementById('date-display').innerHTML = `Week (สัปดาห์): ${mapDate}`;
         const visitEl = document.getElementById('visit-counter');
