@@ -110,36 +110,6 @@
             <button onclick="toggleFullscreen()" id="btn-fullscreen" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Fullscreen (เต็มจอ)"><i class="fa-solid fa-expand"></i></button>
             <button onclick="toggleLang()" id="btn-lang" class="text-[10px] font-black bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-300" title="Language TH / EN (สลับภาษา)">TH</button>
             <button onclick="toggleVoice()" id="btn-voice" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Toggle Voice Announcement"><i class="fa-solid fa-volume-xmark"></i></button>
-            <button onclick="toggleMenu(event)" id="btn-menu" class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-white border border-white/10" title="Menu"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-
-            <!-- Dropdown Menu -->
-            <div id="nav-dropdown" class="hidden absolute right-0 top-9 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 p-2 z-50 flex flex-col gap-1 text-xs">
-                <button onclick="toggleLang();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-language text-cyan-500 w-4 text-center"></i> Voice Lang (ภาษาเสียง)</span>
-                    <span id="menu-lang-badge" class="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded-md text-[10px] font-black">TH</span>
-                </button>
-                <div class="px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex flex-col gap-1.5 transition text-gray-700 dark:text-gray-200 font-bold" onclick="event.stopPropagation();">
-                    <div class="flex items-center justify-between">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-gauge-high text-emerald-500 w-4 text-center"></i> Voice Speed (ความเร็ว)</span>
-                        <span id="menu-rate-badge" onclick="cycleSpeechRate()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md text-[10px] font-black cursor-pointer transition select-none" title="Click to adjust speed (คลิกเพื่อปรับความเร็ว)">1.0x</span>
-                    </div>
-                    <input type="range" id="speech-rate-slider" min="1.0" max="2.5" step="0.25" value="1.0" oninput="changeSpeechRate(this.value)" onchange="testSpeakRate()" class="w-full h-1.5 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
-                </div>
-                <button onclick="toggleDarkMode();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
-                    <span class="flex items-center gap-2"><i id="menu-theme-icon" class="fa-solid fa-moon text-amber-500 w-4 text-center"></i> Theme (ธีม)</span>
-                    <span id="menu-theme-badge" class="text-[10px] text-gray-400 font-medium">Dark</span>
-                </button>
-                <div class="h-px bg-gray-100 dark:bg-slate-700 my-0.5"></div>
-                <button onclick="openQRModal(); closeMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
-                    <i class="fa-solid fa-qrcode text-indigo-500 w-4 text-center"></i> Share QR Code (แชร์ QR)
-                </button>
-                <button onclick="openFeatureModal(); closeMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-rose-500 dark:text-rose-400 font-bold">
-                    <i class="fa-solid fa-wand-magic-sparkles w-4 text-center"></i> What's New (ฟีเจอร์ใหม่)
-                </button>
-                <button onclick="openLogin(); closeMenu();" class="w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
-                    <i class="fa-solid fa-gear text-gray-500 dark:text-gray-400 w-4 text-center"></i> Admin Login (แอดมิน)
-                </button>
-            </div>
         </div>
     </div>
 
@@ -159,8 +129,18 @@
     </div>
 
     <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
-        
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 dark:border-slate-700 gap-1 transition-colors">
+
+        <!-- 🔀 สลับมุมมอง: แบบไอคอน / ตัวหนังสือ / แผนที่ / ตั้งค่า -->
+        <div id="view-toggle" class="hidden flex-shrink-0 grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+            <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
+            <button id="view-btn-list" onclick="setViewMode('list')"></button>
+            <button id="view-btn-text" onclick="setViewMode('text')"></button>
+            <button id="view-btn-map" onclick="setViewMode('map')"></button>
+            <button id="view-btn-settings" onclick="setViewMode('settings')"></button>
+        </div>
+
+        <!-- แถบด่าน / ผู้ใช้ / สัปดาห์ — อยู่ในแท็บตั้งค่า (แอดมินเห็นตลอด) -->
+        <div id="map-bar" class="flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-1.5 flex flex-col md:flex-row items-center justify-between border border-gray-100 dark:border-slate-700 gap-1 transition-colors">
             <div class="flex-1 flex items-center bg-gray-50 dark:bg-slate-900/80 rounded-xl px-2 relative w-full transition-colors">
                 <i class="fa-solid fa-location-dot text-gray-400 mr-2 text-sm"></i>
                 <select id="map-select" onchange="changeMap(this.value)" class="flex-1 min-w-0 py-2 font-black text-sm text-gray-800 dark:text-gray-100 bg-transparent outline-none cursor-pointer appearance-none">
@@ -181,17 +161,37 @@
             </div>
         </div>
 
-        <!-- 🔀 สลับมุมมอง: แบบเดิม / แผนที่ -->
-        <div id="view-toggle" class="hidden flex-shrink-0 grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
-            <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
-            <button id="view-btn-list" onclick="setViewMode('list')"></button>
-            <button id="view-btn-text" onclick="setViewMode('text')"></button>
-            <button id="view-btn-map" onclick="setViewMode('map')"></button>
-            <button id="view-btn-icons" onclick="setViewMode('icons')"></button>
-        </div>
-
         <div id="legend-container" class="hidden flex flex-col gap-2 w-full flex-shrink-0">
             <!-- โหลดจาก JS -->
+        </div>
+
+        <!-- ⚙️ เมนูตั้งค่า (เดิมอยู่ในปุ่ม ⋮ ด้านบน) -->
+        <div id="settings-menu" class="hidden flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 flex flex-col gap-1 text-xs transition-colors">
+            <button onclick="toggleLang();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-language text-cyan-500 w-4 text-center"></i> Language (ภาษา)</span>
+                <span id="menu-lang-badge" class="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded-md text-[10px] font-black">TH</span>
+            </button>
+            <div class="px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex flex-col gap-1.5 transition text-gray-700 dark:text-gray-200 font-bold">
+                <div class="flex items-center justify-between">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-gauge-high text-emerald-500 w-4 text-center"></i> Voice Speed (ความเร็วเสียง)</span>
+                    <span id="menu-rate-badge" onclick="cycleSpeechRate()" class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md text-[10px] font-black cursor-pointer transition select-none" title="Click to adjust speed (คลิกเพื่อปรับความเร็ว)">1.0x</span>
+                </div>
+                <input type="range" id="speech-rate-slider" min="1.0" max="2.5" step="0.25" value="1.0" oninput="changeSpeechRate(this.value)" onchange="testSpeakRate()" class="w-full h-1.5 bg-gray-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+            </div>
+            <button onclick="toggleDarkMode();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                <span class="flex items-center gap-2"><i id="menu-theme-icon" class="fa-solid fa-moon text-amber-500 w-4 text-center"></i> Theme (ธีม)</span>
+                <span id="menu-theme-badge" class="text-[10px] text-gray-400 font-medium">Dark</span>
+            </button>
+            <div class="h-px bg-gray-100 dark:bg-slate-700 my-0.5"></div>
+            <button onclick="openQRModal();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
+                <i class="fa-solid fa-qrcode text-indigo-500 w-4 text-center"></i> Share QR Code (แชร์ QR)
+            </button>
+            <button onclick="openFeatureModal();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-rose-500 dark:text-rose-400 font-bold">
+                <i class="fa-solid fa-wand-magic-sparkles w-4 text-center"></i> What's New (ฟีเจอร์ใหม่)
+            </button>
+            <button onclick="openLogin();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2 transition text-gray-700 dark:text-gray-200 font-bold">
+                <i class="fa-solid fa-user-shield text-gray-500 dark:text-gray-400 w-4 text-center"></i> Admin Login (แอดมิน)
+            </button>
         </div>
 
         <!-- 🗺️ มุมมองแผนที่ (ดูอย่างเดียว) + แถบเลือกเวฟ — บันทึกผ่านปุ่มดินสอ (edit modal เดิม) -->
@@ -561,17 +561,6 @@
         }
     });
 
-    function toggleMenu(e) {
-        if (e) e.stopPropagation();
-        const drop = document.getElementById('nav-dropdown');
-        if (drop) drop.classList.toggle('hidden');
-    }
-
-    function closeMenu() {
-        const drop = document.getElementById('nav-dropdown');
-        if (drop) drop.classList.add('hidden');
-    }
-
     function openFeatureModal() {
         const modal = document.getElementById('feature-modal');
         if (modal) modal.classList.remove('hidden');
@@ -604,14 +593,6 @@
             localStorage.setItem('got_feature_v2_seen', 'true');
         }
     }
-
-    window.addEventListener('click', (e) => {
-        const drop = document.getElementById('nav-dropdown');
-        const btn = document.getElementById('btn-menu');
-        if (drop && !drop.classList.contains('hidden') && !drop.contains(e.target) && (!btn || !btn.contains(e.target))) {
-            closeMenu();
-        }
-    });
 
     function openQRModal() {
         document.getElementById('qr-modal').classList.remove('hidden');
@@ -1516,7 +1497,6 @@
         
         const headerButtons = document.getElementById('header-buttons');
         if (headerButtons) headerButtons.classList.toggle('hidden', isAdmin);
-        if (isAdmin) closeMenu();
 
         updateVoiceButton();
         updateLangButton();
@@ -1532,37 +1512,33 @@
 
         const d = gData.spawnData, i = mapIcons[curM];
         
-        // 🧾 คำแนะนำไอคอนของทุกด่าน (แท็บ Icons)
+        // 🧾 คำแนะนำของด่านนี้ (แท็บตั้งค่า): ไอคอน + คำย่อที่ใช้แสดงผล + ชื่อเต็ม + ความหมาย L/C/R
         const leg = document.getElementById('legend-container');
-        let legHtml = '';
-        for (let mId in mapIcons) {
-            const mInfo = (gData.mapsData && gData.mapsData[mId]) || (window.MAPS && window.MAPS[mId]);
-            const isCur = (mId === curM);
-            let cards = '';
-            for (let k in mapIcons[mId]) {
-                const thName = fullNameTh(mId, k);
-
-                cards += `
-                    <div class="bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-100 dark:border-slate-700 p-2 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 cursor-default">
-                        <span class="text-[24px] md:text-[28px] drop-shadow-sm leading-none">${mapIcons[mId][k]}</span>
-                        <div class="flex flex-col items-center md:items-start text-center md:text-left">
-                            <span class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-200 leading-tight">${shortName(mId, k, uiLang())}</span>
-                            ${uiLang() === 'th' && shortName(mId, k, 'th') !== thName ? `<span class="text-[9px] md:text-[10px] text-gray-400 leading-tight">${thName}</span>` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-            legHtml += `
-                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border-2 ${isCur ? 'border-indigo-500' : 'border-gray-100 dark:border-slate-700'} p-2 transition-colors">
-                    <div class="flex items-center justify-between gap-2 px-1 mb-2">
-                        <span class="text-xs font-black text-gray-800 dark:text-gray-100">${window.MAPS && window.MAPS[mId] ? window.MAPS[mId].icon + ' ' : ''}${mInfo ? mInfo.name[uiLang()] : mId}</span>
-                        ${isCur ? `<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300">${uiLang() === 'th' ? 'สัปดาห์นี้' : 'This week'}</span>` : ''}
-                    </div>
-                    <div class="grid grid-cols-3 gap-1.5 md:gap-2">${cards}</div>
+        const lang = uiLang();
+        const mInfo = (gData.mapsData && gData.mapsData[curM]) || (window.MAPS && window.MAPS[curM]);
+        let cards = '';
+        for (let k in i) {
+            const full = lang === 'th' ? fullNameTh(curM, k) : ((window.MAPS && window.MAPS[curM] && window.MAPS[curM].locs[k]) ? window.MAPS[curM].locs[k].name.en : k);
+            cards += `
+                <div class="bg-gray-50 dark:bg-slate-900/60 rounded-xl border border-gray-100 dark:border-slate-700 p-2 flex flex-col items-center gap-1 text-center cursor-default">
+                    <span class="text-[28px] md:text-[32px] drop-shadow-sm leading-none">${i[k]}</span>
+                    <span class="text-sm md:text-base font-black text-gray-800 dark:text-gray-100 leading-tight">${shortName(curM, k, lang)}</span>
+                    ${full !== shortName(curM, k, lang) ? `<span class="text-[10px] md:text-xs text-gray-400 leading-tight">${full}</span>` : ''}
                 </div>
             `;
         }
-        leg.innerHTML = legHtml;
+        const sideRows = [['L', 'ซ้าย', 'Left'], ['C', 'กลาง', 'Center'], ['R', 'ขวา', 'Right']].map(([id, th, en]) => `
+            <span class="flex items-center gap-1.5">
+                <span class="min-w-[24px] h-6 px-1 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-sm font-black flex items-center justify-center">${id}</span>
+                <span class="text-xs text-gray-600 dark:text-gray-300">${lang === 'th' ? th : en}</span>
+            </span>`).join('');
+        leg.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 transition-colors">
+                <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-2">${window.MAPS && window.MAPS[curM] ? window.MAPS[curM].icon + ' ' : ''}${mInfo ? mInfo.name[lang] : curM}</div>
+                <div class="grid grid-cols-3 gap-1.5 md:gap-2">${cards}</div>
+                <div class="flex items-center justify-around gap-2 mt-2 pt-2 px-1 border-t border-gray-100 dark:border-slate-700">${sideRows}</div>
+            </div>
+        `;
 
         const con = document.getElementById('waves-container');
         con.innerHTML = '';
@@ -1681,7 +1657,9 @@
             btn.className = `py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black leading-tight transition ${mode === m ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`;
             if (m === 'map') btn.classList.toggle('hidden', !canMapView);
         });
-        leg.classList.toggle('hidden', mode !== 'icons');
+        leg.classList.toggle('hidden', mode !== 'settings');
+        document.getElementById('settings-menu').classList.toggle('hidden', mode !== 'settings');
+        document.getElementById('map-bar').classList.toggle('hidden', !isAdmin && mode !== 'settings');
         con.classList.toggle('hidden', mode !== 'list');
         renderMapView(mode === 'map');
         renderTextView(mode === 'text');
@@ -1704,15 +1682,26 @@
         return (NAMES_TH[mapId] && NAMES_TH[mapId][loc]) ? NAMES_TH[mapId][loc][1] : sheetNameTh(mapId, loc);
     }
 
+    // คำย่ออังกฤษ (ไม่มีในตาราง = ใช้ id เดิม)
+    const SHORT_EN = {
+        hidden_temple: { Cemetery: 'Grave', Courtyard: 'Yard' },
+        river_village: { RicePaddies: 'Rice', Village: 'Town' },
+        frozen_valley: { Hillside: 'Hill', Waterfalls: 'Falls', Armory: 'Arms' },
+        broken_castle: { Foundry: 'Forge', 'Burnt Garden': 'Garden' }
+    };
+
     function shortName(mapId, loc, lang) {
-        if (lang !== 'th') return loc;
+        if (lang !== 'th') return (SHORT_EN[mapId] && SHORT_EN[mapId][loc]) || loc;
         return (NAMES_TH[mapId] && NAMES_TH[mapId][loc]) ? NAMES_TH[mapId][loc][0] : sheetNameTh(mapId, loc);
     }
 
-    // ชื่อจุดเกิดเป็นตัวหนังสือ เช่น "โรง-ซ้าย" / "Foundry-Left"
-    function ptLabel(p, lang) {
-        const name = shortName(curM, p.loc, lang);
-        return p.side ? `${name}-${sideName(curM, p.loc, p.side, lang)}` : name;
+    // ชื่อจุดเกิดเป็นตัวหนังสือ เช่น "โรง-ซ้าย" / "Foundry-L" (อังกฤษใช้ตัวอักษรฝั่ง ให้สั้นพอบนมือถือ)
+    // ชื่อกับฝั่งแยก span ไม่ตัดกลางคำ · จอแคบตกบรรทัดตรงขีดเท่านั้น
+    function ptLabelHtml(p, lang) {
+        const name = `<span class="whitespace-nowrap">${shortName(curM, p.loc, lang)}</span>`;
+        if (!p.side) return name;
+        const side = lang === 'th' ? sideName(curM, p.loc, p.side, 'th') : p.side;
+        return `${name}<wbr><span class="whitespace-nowrap text-indigo-500 dark:text-indigo-300">-${side}</span>`;
     }
 
     function renderTextView(isTextView) {
@@ -1742,19 +1731,14 @@
                         if (ac) dots += `<span class="inline-block w-2.5 h-2.5 rounded-full ${ac.hexClass} ml-1 align-middle"></span>`;
                     });
                     cells += `
-                        <div class="flex items-start gap-1.5 min-w-0">
-                            <span class="flex-shrink-0 w-5 h-5 mt-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-[10px] font-black text-gray-500 dark:text-gray-300 flex items-center justify-center">${idx + 1}</span>
-                            <div class="min-w-0 leading-tight">
-                                <div class="text-sm md:text-base font-normal text-gray-800 dark:text-gray-100">${p ? ptLabel(p, uiLang()) + dots : '-'}</div>
-                            </div>
-                        </div>`;
+                        <div class="min-w-0 leading-tight font-sans ${limit === 4 ? 'text-xs' : 'text-[13px]'} md:text-base font-normal text-gray-800 dark:text-gray-100">${p ? ptLabelHtml(p, uiLang()) + dots : '-'}</div>`;
                 }
 
                 out += `
-                    <div onclick="activateSubWave(${w}, ${s})" class="flex items-center gap-2 py-2.5 px-1 cursor-pointer rounded-xl border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 transition-all ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/80 ring-1 ring-indigo-400 my-1' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}">
-                        <div class="w-12 flex-shrink-0 text-center font-black text-sm tracking-widest ${isActive ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-300 dark:text-slate-600'}">${num}</div>
-                        <div class="flex-1 min-w-0 grid gap-2 ${limit === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'}">${cells}</div>
-                        <button onclick="event.stopPropagation(); openWaveEdit(${w}, ${s})" title="Edit & Save this wave (แก้ไข/บันทึกจุดเกิดของเวฟนี้)" class="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 dark:bg-indigo-400/15 border border-indigo-200/60 dark:border-indigo-500/30 active:scale-95 transition-all">
+                    <div onclick="activateSubWave(${w}, ${s})" class="flex items-center gap-1.5 md:gap-2 py-2.5 px-1 cursor-pointer rounded-xl border-b border-gray-100/60 dark:border-slate-700/60 last:border-0 transition-all ${isActive ? 'bg-indigo-100 dark:bg-indigo-900/80 ring-1 ring-indigo-400 my-1' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}">
+                        <div class="w-9 md:w-12 flex-shrink-0 text-center font-black text-xs md:text-sm md:tracking-widest ${isActive ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-300 dark:text-slate-600'}">${num}</div>
+                        <div class="flex-1 min-w-0 grid gap-1.5 md:gap-2 ${limit === 4 ? 'grid-cols-4' : 'grid-cols-3'}">${cells}</div>
+                        <button onclick="event.stopPropagation(); openWaveEdit(${w}, ${s})" title="Edit & Save this wave (แก้ไข/บันทึกจุดเกิดของเวฟนี้)" class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 dark:bg-indigo-400/15 border border-indigo-200/60 dark:border-indigo-500/30 active:scale-95 transition-all">
                             <i class="fa-solid fa-pencil text-indigo-500 dark:text-indigo-400 text-sm"></i>
                         </button>
                     </div>`;
@@ -1765,12 +1749,12 @@
     }
 
     // 🗺️ มุมมองแผนที่ (ดูอย่างเดียว) — เลือกเวฟจากแถบเลข แทนรายการเวฟแบบเดิม
-    let viewMode = ['map', 'text', 'icons'].includes(localStorage.getItem('got_view')) ? localStorage.getItem('got_view') : 'list';
+    let viewMode = ['map', 'text', 'settings'].includes(localStorage.getItem('got_view')) ? localStorage.getItem('got_view') : 'list';
     const VIEW_TABS = {
         list:  { icon: 'fa-icons',       th: 'แบบไอคอน',      en: 'Icons' },
         text:  { icon: 'fa-font',        th: 'แบบตัวหนังสือ', en: 'Text' },
         map:   { icon: 'fa-map',         th: 'แผนที่',         en: 'Map' },
-        icons: { icon: 'fa-circle-info', th: 'คำแนะนำ',       en: 'Guide' }
+        settings: { icon: 'fa-gear',     th: 'ตั้งค่า',        en: 'Settings' }
     };
     let mapW = 1, mapS = 1;
     const MAP_WAVES = [1,2,3,4].flatMap(w => [1,2,3].map(s => [w, s]));
