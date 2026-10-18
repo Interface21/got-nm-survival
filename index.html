@@ -72,20 +72,6 @@
             background-color: #0F172A;
             box-shadow: 0 0 50px rgba(0,0,0,0.7);
         }
-        .header { 
-            background: #111827; 
-            color: white; 
-            padding: 10px 16px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            z-index: 20;
-        }
-        html.dark .header {
-            background: #090D16;
-            border-bottom: 1px solid #1E293B;
-        }
         ::-webkit-scrollbar { display: none; }
         /* 🗺️ แผนที่ (maps/viewer.js) — ภาพแผนที่เป็นโทนมืดทั้งสองธีม */
         .map-view {
@@ -97,22 +83,6 @@
 <body>
 
 <div id="app">
-    <div class="header">
-        <div class="flex flex-col">
-            <div class="font-black text-[13px] md:text-sm flex items-center gap-1.5 tracking-wide text-white">
-                <i class="fa-solid fa-ghost text-red-500"></i> Ghost of Yotei Legends
-            </div>
-            <div class="text-[9px] md:text-[10px] font-medium text-gray-400 tracking-widest uppercase ml-5">
-                : Nightmare Survival Mode
-            </div>
-        </div>
-        <div id="header-buttons" class="flex gap-2 items-center relative z-50">
-            <button onclick="toggleFullscreen()" id="btn-fullscreen" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Fullscreen (เต็มจอ)"><i class="fa-solid fa-expand"></i></button>
-            <button onclick="toggleLang()" id="btn-lang" class="text-[10px] font-black bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-300" title="Language TH / EN (สลับภาษา)">TH</button>
-            <button onclick="toggleVoice()" id="btn-voice" class="text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400" title="Toggle Voice Announcement"><i class="fa-solid fa-volume-xmark"></i></button>
-        </div>
-    </div>
-
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="absolute inset-0 z-50 bg-[#F4F4F5] dark:bg-slate-900 flex flex-col items-center justify-center transition-opacity duration-300">
         <i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-500 mb-3"></i>
@@ -167,6 +137,21 @@
 
         <!-- ⚙️ เมนูตั้งค่า (เดิมอยู่ในปุ่ม ⋮ ด้านบน) -->
         <div id="settings-menu" class="hidden flex-shrink-0 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 flex flex-col gap-1 text-xs transition-colors">
+            <div class="px-3 pt-1 pb-2">
+                <div class="font-black text-[13px] md:text-sm flex items-center gap-1.5 tracking-wide text-gray-800 dark:text-white">
+                    <i class="fa-solid fa-ghost text-red-500"></i> Ghost of Yotei Legends
+                </div>
+                <div class="text-[9px] md:text-[10px] font-medium text-gray-400 tracking-widest uppercase ml-5">: Nightmare Survival Mode</div>
+            </div>
+            <div class="h-px bg-gray-100 dark:bg-slate-700 my-0.5"></div>
+            <button onclick="toggleVoice();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                <span class="flex items-center gap-2"><i id="menu-voice-icon" class="fa-solid fa-volume-xmark text-emerald-500 w-4 text-center"></i> Voice (เสียงบอกจุดเกิด)</span>
+                <span id="menu-voice-badge" class="px-2 py-0.5 rounded-md text-[10px] font-black">OFF</span>
+            </button>
+            <button onclick="toggleFullscreen();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
+                <span class="flex items-center gap-2"><i id="menu-fs-icon" class="fa-solid fa-expand text-violet-500 w-4 text-center"></i> Fullscreen (เต็มจอ)</span>
+                <span id="menu-fs-badge" class="text-[10px] text-gray-400 font-medium">OFF</span>
+            </button>
             <button onclick="toggleLang();" class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center justify-between transition text-gray-700 dark:text-gray-200 font-bold">
                 <span class="flex items-center gap-2"><i class="fa-solid fa-language text-cyan-500 w-4 text-center"></i> Language (ภาษา)</span>
                 <span id="menu-lang-badge" class="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded-md text-[10px] font-black">TH</span>
@@ -657,11 +642,12 @@
     }
 
     function updateFullscreenButton() {
-        const btn = document.getElementById('btn-fullscreen');
-        if (!btn) return;
+        const icon = document.getElementById('menu-fs-icon');
+        const badge = document.getElementById('menu-fs-badge');
+        if (!icon || !badge) return;
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        btn.innerHTML = isFs ? '<i class="fa-solid fa-compress"></i>' : '<i class="fa-solid fa-expand"></i>';
-        btn.title = isFs ? 'Exit Fullscreen (ออกจากเต็มจอ)' : 'Fullscreen (เต็มจอ)';
+        icon.className = `fa-solid ${isFs ? 'fa-compress' : 'fa-expand'} text-violet-500 w-4 text-center`;
+        badge.textContent = isFs ? 'ON' : 'OFF';
     }
 
     document.addEventListener('fullscreenchange', updateFullscreenButton);
@@ -892,11 +878,9 @@
         if (menuLangBadge) {
             menuLangBadge.textContent = speechLang;
         }
-        const btnLang = document.getElementById('btn-lang');
-        if (btnLang) btnLang.textContent = speechLang;
     }
 
-    // 🌐 ภาษาแสดงผล (ปุ่ม TH / EN ด้านบน) ใช้ค่าเดียวกับภาษาเสียง
+    // 🌐 ภาษาแสดงผล (เมนู Language ในแท็บตั้งค่า) ใช้ค่าเดียวกับภาษาเสียง
     const uiLang = () => (speechLang === 'EN' ? 'en' : 'th');
 
     function toggleVoice() {
@@ -913,16 +897,12 @@
     }
 
     function updateVoiceButton() {
-        const btn = document.getElementById('btn-voice');
-        if (btn) {
-            if (voiceEnabled) {
-                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-                btn.className = 'text-[10px] bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/40 hover:text-white px-3 py-1.5 rounded-full transition border border-emerald-500/30 shadow-sm';
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
-                btn.className = 'text-[10px] bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition text-gray-400';
-            }
-        }
+        const icon = document.getElementById('menu-voice-icon');
+        const badge = document.getElementById('menu-voice-badge');
+        if (!icon || !badge) return;
+        icon.className = `fa-solid ${voiceEnabled ? 'fa-volume-high' : 'fa-volume-xmark'} text-emerald-500 w-4 text-center`;
+        badge.textContent = voiceEnabled ? 'ON' : 'OFF';
+        badge.className = `px-2 py-0.5 rounded-md text-[10px] font-black ${voiceEnabled ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-400'}`;
     }
 
     function updateRateUI() {
@@ -1494,9 +1474,6 @@
         const btnChangeMap = document.getElementById('btn-change-map');
         if (btnChangeMap) btnChangeMap.classList.toggle('hidden', isAdmin || !gData.canChangeMap);
         document.getElementById('admin-bar').classList.toggle('hidden', !isAdmin);
-        
-        const headerButtons = document.getElementById('header-buttons');
-        if (headerButtons) headerButtons.classList.toggle('hidden', isAdmin);
 
         updateVoiceButton();
         updateLangButton();
