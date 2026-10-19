@@ -1520,8 +1520,9 @@
                 
                 for(let idx=0; idx<limit; idx++) {
                     const rawItem = d[w][s] ? d[w][s][idx] : null;
-                    // 👥 ป้ายทีมมุมซ้ายบน · จุดของอีกทีมจาง (เฉพาะเมื่อเลือกทีมของฉัน)
-                    html += `<div class="relative ${teamDimCls(w, s, idx)}">${teamBadge(w, s, idx, 'absolute -top-1.5 -left-1.5 z-10 shadow-sm')}`;
+                    // 👥 เลือกทีมของฉันแล้ว: ป้ายฝั่งเป็นสีทีม (ไม่มีฝั่ง = ป้ายอักษรทีม) · จุดของอีกทีมจาง
+                    const team = myTeam && teamOf(w, s, idx);
+                    html += `<div class="${teamDimCls(w, s, idx)}">`;
                     if (rawItem) {
                         // 🌟 แยกส่วนประกอบเวลาวาดหน้าจอ
                         const pt = parsePt(rawItem);
@@ -1550,7 +1551,7 @@
                                 <div class="flex flex-col items-center">
                                     <div class="flex items-center gap-0.5">
                                         <span class="wave-icon text-[30px] md:text-[34px] leading-none transition-transform cursor-default ${iconClass}">${i[locName]}</span>
-                                        ${pt.side ? `<span class="ml-0.5 min-w-[24px] h-6 md:min-w-[28px] md:h-7 px-1 rounded-lg bg-indigo-600 dark:bg-indigo-500 text-white text-sm md:text-base font-black leading-none flex items-center justify-center shadow-sm">${pt.side}</span>` : ''}
+                                        ${pt.side || team ? `<span class="ml-0.5 min-w-[24px] h-6 md:min-w-[28px] md:h-7 px-1 rounded-lg ${team ? TEAM_CLS[team] : 'bg-indigo-600 dark:bg-indigo-500 text-white'} text-sm md:text-base font-black leading-none flex items-center justify-center shadow-sm">${pt.side || team}</span>` : ''}
                                     </div>
                                     ${colorDotsHtml}
                                 </div>
