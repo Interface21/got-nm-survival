@@ -1649,9 +1649,18 @@
     const TEAM_CLS = { A: 'bg-sky-500 text-white', B: 'bg-fuchsia-500 text-white' };
     const NEXT_TEAM = { '': 'A', A: 'B', B: '' };
 
-    function teamOf(w, s, i) {
+    // ทีมที่กดกำหนดเอง (ค่าที่บันทึก)
+    function rawTeam(w, s, i) {
         const st = ptState[ptKey(w, s, i, 'team')];
         return ptBusy(st) ? st.value : savedOf('team', w, s, i);
+    }
+
+    // ทีมที่ใช้แสดงผล: จุดที่ยังว่างเป็นอีกทีมให้เอง (มี A ในเวฟย่อย = ที่เหลือ B · มีแต่ B = ที่เหลือ A)
+    function teamOf(w, s, i) {
+        const t = rawTeam(w, s, i);
+        if (t) return t;
+        const all = [0, 1, 2, 3].slice(0, w === 4 ? 4 : 3).map(j => rawTeam(w, s, j));
+        return all.includes('A') ? 'B' : all.includes('B') ? 'A' : '';
     }
     const isOtherTeam = (w, s, i) => { const t = myTeam && teamOf(w, s, i); return !!t && t !== myTeam; };
     const teamDimCls = (w, s, i) => isOtherTeam(w, s, i) ? 'opacity-25' : '';
@@ -1668,7 +1677,7 @@
 
     function cycleTeam(w, s, i) {
         if (!gData.isMapSet) { openMapPicker(true); return; }
-        queuePoint('team', w, s, i, NEXT_TEAM[teamOf(w, s, i)]);
+        queuePoint('team', w, s, i, NEXT_TEAM[rawTeam(w, s, i)]);
         render();
     }
 
@@ -1685,8 +1694,8 @@
                 <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-1.5">${lang === 'th' ? 'ทีมของฉัน' : 'My team'}</div>
                 <div class="grid grid-cols-3 gap-1 p-1 bg-gray-50 dark:bg-slate-900/60 rounded-xl">${pick}</div>
                 <div class="text-[11px] text-gray-500 dark:text-gray-400 px-1 mt-2 leading-snug">${lang === 'th'
-                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีมของฉันแล้ว จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมเรา'
-                    : "Tap a point to cycle none → A → B · saved for everyone automatically · with My team set, the other team's points fade and voice reads only yours"}</div>
+                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · กำหนดทีมหนึ่งแล้ว จุดที่เหลือเป็นอีกทีมให้เอง · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีมของฉันแล้ว จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมเรา'
+                    : "Tap a point to cycle none → A → B · once one team is set, the rest go to the other team · saved for everyone automatically · with My team set, the other team's points fade and voice reads only yours"}</div>
             </div>`;
 
         const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
@@ -1706,7 +1715,7 @@
                         <button onclick="cycleTeam(${w}, ${s}, ${idx})" class="relative min-w-0 rounded-xl px-1 py-1.5 flex flex-col items-center gap-0.5 border-2 transition active:scale-95 ${t ? TEAM_CLS[t] + ' border-transparent shadow-sm' : 'border-dashed border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200'}">
                             ${stIcon}
                             <span class="text-sm font-black leading-none">${t || '–'}</span>
-                            <span class="w-full truncate text-center font-sans text-[11px] leading-tight ${t ? 'text-white/90' : 'text-gray-400'}">${p ? shortName(curM, p.loc, lang) + (p.side ? '-' + p.side : '') : (lang === 'th' ? 'จุด ' : '#') + (idx + 1)}</span>
+                            <span class="w-full truncate text-center font-sans text-[11px] leading-tight ${t ? 'text-white/90' : 'text-gray-400'}">${p ? shortName(curM, p.loc, lang) + (p.side ? '-' + (lang === 'th' ? sideName(curM, p.loc, p.side, 'th') : p.side) : '') : (lang === 'th' ? 'จุด ' : '#') + (idx + 1)}</span>
                         </button>`;
                 }
                 out += `
