@@ -249,6 +249,11 @@
         </div>
     </div>
 
+    <!-- 👥 ถามทีมของฉัน (สัปดาห์นี้มีการแบ่งทีมแล้ว และยังไม่ได้เลือก) · เนื้อหาใส่จาก JS ตามภาษา -->
+    <div id="team-modal" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
+        <div id="team-modal-body" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl flex flex-col items-center gap-3 my-auto border dark:border-slate-700 transition-colors"></div>
+    </div>
+
     <!-- QR Code Modal -->
     <div id="qr-modal" onclick="if(event.target===this) closeQRModal()" class="hidden absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity overflow-y-auto">
         <div onclick="event.stopPropagation()" class="bg-white dark:bg-slate-800 dark:text-gray-100 p-6 rounded-3xl w-full max-w-xs text-center shadow-2xl relative overflow-hidden flex flex-col items-center my-auto border dark:border-slate-700 transition-colors" style="max-height: 85vh; max-height: 85dvh; overflow-y: auto;">
@@ -455,6 +460,8 @@
 
             if (gData.isMapSet && !localStorage.getItem('got_feature_v3_seen')) {
                 setTimeout(() => openFeatureModal(), 600);
+            } else {
+                maybeAskTeam();
             }
         } catch(err) {
             document.getElementById('loading-text').innerHTML = "Error: " + err.toString(); 
@@ -532,6 +539,7 @@
         if (save) {
             localStorage.setItem('got_feature_v3_seen', 'true');
         }
+        maybeAskTeam();
     }
 
     function openQRModal() {
@@ -1063,6 +1071,7 @@
             const res = await apiCall('getLatestSpawnData');
             if (!applyLatest(res)) return false;
             render();
+            maybeAskTeam();
 
             // มีผู้เล่นคนอื่นเลือกด่านให้แล้ว ปิดหน้าต่างเลือกด่านอัตโนมัติ
             if (mapPickerForced && gData.isMapSet) {
@@ -1587,7 +1596,7 @@
         Object.keys(VIEW_TABS).forEach(m => {
             const btn = document.getElementById(`view-btn-${m}`);
             const t = VIEW_TABS[m];
-            btn.innerHTML = `<i class="fa-solid ${t.icon} mr-1 hidden sm:inline"></i>${t[uiLang()]}`;
+            btn.innerHTML = `<i class="fa-solid ${t.icon} mr-1 hidden sm:inline"></i>${m === 'team' && myTeam ? (uiLang() === 'th' ? 'ทีม ' : 'Team ') + myTeam : t[uiLang()]}`;
             btn.className = `py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black leading-tight transition ${mode === m ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`;
             if (m === 'map') btn.classList.toggle('hidden', !canMapView);
         });
@@ -1673,7 +1682,33 @@
     function setMyTeam(t) {
         myTeam = t;
         localStorage.setItem('got_team', t);
+        localStorage.setItem('got_team_week', mapDate);
+        document.getElementById('team-modal').classList.add('hidden');
         render();
+    }
+
+    // สัปดาห์นี้มีคนแบ่งทีมแล้ว แต่เครื่องนี้ยังไม่ได้เลือกทีม = ถามทันที (ถามสัปดาห์ละครั้ง · เปลี่ยนทีหลังได้ที่แท็บทีม)
+    function maybeAskTeam() {
+        if (isAdmin || !gData.isMapSet || localStorage.getItem('got_team_week') === mapDate) return;
+        const hasTeams = Object.values(gData.teamData || {}).some(ws => Object.values(ws).some(a => a.some(Boolean)));
+        const busy = ['feature-modal', 'map-picker-modal', 'edit-modal', 'dynamic-modal', 'login-modal', 'qr-modal', 'team-modal']
+            .some(id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); });
+        if (!hasTeams || busy) return;
+
+        const th = uiLang() === 'th';
+        const btn = (t, cls, label) => `<button onclick="setMyTeam('${t}')" class="w-full py-3 rounded-xl font-black text-sm transition active:scale-95 ${cls}">${label}</button>`;
+        document.getElementById('team-modal-body').innerHTML = `
+            <div class="w-12 h-12 rounded-full flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/60">
+                <i class="fa-solid fa-users text-indigo-500 dark:text-indigo-400 text-xl"></i>
+            </div>
+            <h3 class="font-black text-lg text-gray-800 dark:text-white">${th ? 'คุณอยู่ทีมไหน?' : 'Which team are you on?'}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">${th
+                ? 'สัปดาห์นี้มีการแบ่งทีมแล้ว เลือกทีมของคุณ จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมคุณ (เปลี่ยนได้ที่แท็บทีม)'
+                : "Teams are set this week. Pick yours: the other team's points fade and voice reads only yours (change it in the Teams tab)."}</p>
+            ${btn('A', TEAM_CLS.A, th ? 'ทีม A' : 'Team A')}
+            ${btn('B', TEAM_CLS.B, th ? 'ทีม B' : 'Team B')}
+            ${btn('', 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300', th ? 'ดูทั้งหมด (ไม่เลือกทีม)' : 'Show all (no team)')}`;
+        document.getElementById('team-modal').classList.remove('hidden');
     }
 
     function cycleTeam(w, s, i) {
@@ -1688,15 +1723,15 @@
         if (!isTeamView) return;
 
         const lang = uiLang();
-        const pick = [['', 'ไม่แสดง', 'Off'], ['A', 'ทีม A', 'Team A'], ['B', 'ทีม B', 'Team B']].map(([t, th, en]) => `
+        const pick = [['', 'ดูทั้งหมด', 'All'], ['A', 'ทีม A', 'Team A'], ['B', 'ทีม B', 'Team B']].map(([t, th, en]) => `
             <button onclick="setMyTeam('${t}')" class="py-2 rounded-xl text-xs font-black transition ${myTeam === t ? (t ? TEAM_CLS[t] : 'bg-slate-600 text-white') + ' shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}">${lang === 'th' ? th : en}</button>`).join('');
         let out = `
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 transition-colors">
                 <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-1.5">${lang === 'th' ? 'ทีมของฉัน' : 'My team'}</div>
                 <div class="grid grid-cols-3 gap-1 p-1 bg-gray-50 dark:bg-slate-900/60 rounded-xl">${pick}</div>
                 <div class="text-[11px] text-gray-500 dark:text-gray-400 px-1 mt-2 leading-snug">${lang === 'th'
-                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · กำหนดทีมหนึ่งแล้ว จุดที่เหลือเป็นอีกทีมให้เอง · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีมของฉันแล้ว จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมเรา'
-                    : "Tap a point to cycle none → A → B · once one team is set, the rest go to the other team · saved for everyone automatically · with My team set, the other team's points fade and voice reads only yours"}</div>
+                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · กำหนดทีมหนึ่งแล้ว จุดที่เหลือเป็นอีกทีมให้เอง · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีม A/B แล้ว จุดของอีกทีมจะจางลงในทุกแท็บ และเสียงพูดเฉพาะทีมเรา · ดูทั้งหมด = ไม่กรองทีม'
+                    : "Tap a point to cycle none → A → B · once one team is set, the rest go to the other team · saved for everyone automatically · with Team A/B picked, the other team's points fade in every tab and voice reads only yours · All = no team filter"}</div>
             </div>`;
 
         const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
@@ -1783,7 +1818,7 @@
         list:  { icon: 'fa-icons',       th: 'ไอคอน',          en: 'Icons' },
         text:  { icon: 'fa-font',        th: 'ตัวหนังสือ',     en: 'Text' },
         map:   { icon: 'fa-map',         th: 'แผนที่',         en: 'Map' },
-        team:  { icon: 'fa-people-group', th: 'ทีม',          en: 'Teams' },
+        team:  { icon: 'fa-users', th: 'ทีม',          en: 'Teams' },
         settings: { icon: 'fa-gear',     th: 'ตั้งค่า',        en: 'Settings' }
     };
     let mapW = 1, mapS = 1;
