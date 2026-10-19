@@ -94,7 +94,7 @@
 
     <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
 
-        <!-- 🔀 สลับมุมมอง: ไอคอน / ตัวหนังสือ / แผนที่ / ทีม / ตั้งค่า -->
+        <!-- 🔀 สลับมุมมอง: ไอคอน / ตัวหนังสือ / แผนที่ / แบ่งทีม / ตั้งค่า + แถบทีมของฉัน -->
         <!-- ตรึงไว้ด้านบนตอนเลื่อน: กรอบนอกสีพื้นแอป ตรึงที่ -12px (= padding ของกล่องเลื่อน) ปิดช่องเหนือแถบ ไม่ให้เห็นเนื้อหาเลื่อนผ่าน -->
         <div id="view-toggle" class="hidden sticky -top-3 z-30 -mt-3 pt-3 flex-shrink-0 bg-[#F4F4F5] dark:bg-[#0F172A] transition-colors">
             <div class="grid grid-cols-5 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
@@ -105,6 +105,8 @@
                 <button id="view-btn-team" onclick="setViewMode('team')"></button>
                 <button id="view-btn-settings" onclick="setViewMode('settings')"></button>
             </div>
+            <!-- 👥 ทีมของฉัน (JS: renderMyTeamBar) -->
+            <div id="my-team-bar" class="hidden mt-1.5 flex items-center gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors"></div>
         </div>
 
         <!-- แถบด่าน / ผู้ใช้ / สัปดาห์ — อยู่ในแท็บตั้งค่า (แอดมินเห็นตลอด) -->
@@ -1596,7 +1598,7 @@
         Object.keys(VIEW_TABS).forEach(m => {
             const btn = document.getElementById(`view-btn-${m}`);
             const t = VIEW_TABS[m];
-            btn.innerHTML = `<i class="fa-solid ${t.icon} mr-1 hidden sm:inline"></i>${m === 'team' && myTeam ? (uiLang() === 'th' ? 'ทีม ' : 'Team ') + myTeam : t[uiLang()]}`;
+            btn.innerHTML = `<i class="fa-solid ${t.icon} mr-1 hidden sm:inline"></i>${t[uiLang()]}`;
             btn.className = `py-2 px-1 rounded-xl text-[11px] sm:text-xs font-black leading-tight transition ${mode === m ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}`;
             if (m === 'map') btn.classList.toggle('hidden', !canMapView);
         });
@@ -1607,6 +1609,7 @@
         renderMapView(mode === 'map');
         renderTextView(mode === 'text');
         renderTeamView(mode === 'team');
+        renderMyTeamBar(mode);
     }
 
     // 🔤 ชื่อไทย [คำย่อ, คำเต็ม] — คำย่อใช้แสดงผล (แท็บตัวหนังสือ / แผนที่ / คำแนะนำ)
@@ -1687,13 +1690,26 @@
         render();
     }
 
-    // สัปดาห์นี้มีคนแบ่งทีมแล้ว แต่เครื่องนี้ยังไม่ได้เลือกทีม = ถามทันที (ถามสัปดาห์ละครั้ง · เปลี่ยนทีหลังได้ที่แท็บทีม)
+    // สัปดาห์นี้มีคนแบ่งทีมแล้ว แต่เครื่องนี้ยังไม่ได้เลือกทีม = ถามทันที (ถามสัปดาห์ละครั้ง · เปลี่ยนทีหลังได้ที่แถบทีมของฉัน)
+    const hasTeams = () => Object.values(gData.teamData || {}).some(ws => Object.values(ws).some(a => a.some(Boolean)));
+
+    // แถบ "ทีมของฉัน" ใต้แท็บ (แบบไอคอน/ตัวหนังสือ/แผนที่ · เฉพาะสัปดาห์ที่มีการแบ่งทีม) กดสลับทีมได้ทันที
+    function renderMyTeamBar(mode) {
+        const bar = document.getElementById('my-team-bar');
+        const show = !isAdmin && hasTeams() && ['list', 'text', 'map'].includes(mode);
+        bar.classList.toggle('hidden', !show);
+        if (!show) return;
+        const th = uiLang() === 'th';
+        bar.innerHTML = `<span class="pl-2 pr-1 text-[11px] font-black text-gray-500 dark:text-gray-400 whitespace-nowrap">${th ? 'ทีมของฉัน' : 'My team'}</span>` +
+            [['', th ? 'ทั้งหมด' : 'All'], ['A', th ? 'ทีม A' : 'Team A'], ['B', th ? 'ทีม B' : 'Team B']].map(([t, label]) => `
+            <button onclick="setMyTeam('${t}')" class="flex-1 py-1.5 rounded-xl text-xs font-black transition ${myTeam === t ? (t ? TEAM_CLS[t] : 'bg-slate-600 text-white') + ' shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}">${label}</button>`).join('');
+    }
+
     function maybeAskTeam() {
         if (isAdmin || !gData.isMapSet || localStorage.getItem('got_team_week') === mapDate) return;
-        const hasTeams = Object.values(gData.teamData || {}).some(ws => Object.values(ws).some(a => a.some(Boolean)));
         const busy = ['feature-modal', 'map-picker-modal', 'edit-modal', 'dynamic-modal', 'login-modal', 'qr-modal', 'team-modal']
             .some(id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); });
-        if (!hasTeams || busy) return;
+        if (!hasTeams() || busy) return;
 
         const th = uiLang() === 'th';
         const btn = (t, cls, label) => `<button onclick="setMyTeam('${t}')" class="w-full py-3 rounded-xl font-black text-sm transition active:scale-95 ${cls}">${label}</button>`;
@@ -1703,8 +1719,8 @@
             </div>
             <h3 class="font-black text-lg text-gray-800 dark:text-white">${th ? 'คุณอยู่ทีมไหน?' : 'Which team are you on?'}</h3>
             <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">${th
-                ? 'สัปดาห์นี้มีการแบ่งทีมแล้ว เลือกทีมของคุณ จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมคุณ (เปลี่ยนได้ที่แท็บทีม)'
-                : "Teams are set this week. Pick yours: the other team's points fade and voice reads only yours (change it in the Teams tab)."}</p>
+                ? 'สัปดาห์นี้มีการแบ่งทีมแล้ว เลือกทีมของคุณ จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมคุณ (เปลี่ยนได้ที่แถบ ทีมของฉัน ใต้แท็บ)'
+                : "Teams are set this week. Pick yours: the other team's points fade and voice reads only yours (change it in the My team bar under the tabs)."}</p>
             ${btn('A', TEAM_CLS.A, th ? 'ทีม A' : 'Team A')}
             ${btn('B', TEAM_CLS.B, th ? 'ทีม B' : 'Team B')}
             ${btn('', 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300', th ? 'ดูทั้งหมด (ไม่เลือกทีม)' : 'Show all (no team)')}`;
@@ -1723,15 +1739,12 @@
         if (!isTeamView) return;
 
         const lang = uiLang();
-        const pick = [['', 'ดูทั้งหมด', 'All'], ['A', 'ทีม A', 'Team A'], ['B', 'ทีม B', 'Team B']].map(([t, th, en]) => `
-            <button onclick="setMyTeam('${t}')" class="py-2 rounded-xl text-xs font-black transition ${myTeam === t ? (t ? TEAM_CLS[t] : 'bg-slate-600 text-white') + ' shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}">${lang === 'th' ? th : en}</button>`).join('');
         let out = `
             <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 transition-colors">
-                <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-1.5">${lang === 'th' ? 'ทีมของฉัน' : 'My team'}</div>
-                <div class="grid grid-cols-3 gap-1 p-1 bg-gray-50 dark:bg-slate-900/60 rounded-xl">${pick}</div>
-                <div class="text-[11px] text-gray-500 dark:text-gray-400 px-1 mt-2 leading-snug">${lang === 'th'
-                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · กำหนดทีมหนึ่งแล้ว จุดที่เหลือเป็นอีกทีมให้เอง · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีม A/B แล้ว จุดของอีกทีมจะจางลงในทุกแท็บ และเสียงพูดเฉพาะทีมเรา · ดูทั้งหมด = ไม่กรองทีม'
-                    : "Tap a point to cycle none → A → B · once one team is set, the rest go to the other team · saved for everyone automatically · with Team A/B picked, the other team's points fade in every tab and voice reads only yours · All = no team filter"}</div>
+                <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-1">${lang === 'th' ? 'แบ่งทีมของสัปดาห์นี้ (ทุกคนเห็นเหมือนกัน)' : "This week's teams (shared with everyone)"}</div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 px-1 leading-snug">${lang === 'th'
+                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · กำหนดทีมหนึ่งแล้ว จุดที่เหลือเป็นอีกทีมให้เอง · บันทึกให้ทุกคนอัตโนมัติ · ทีมของคุณเลือกที่แถบ "ทีมของฉัน" ในแท็บไอคอน/ตัวหนังสือ/แผนที่'
+                    : 'Tap a point to cycle none → A → B · once one team is set, the rest go to the other team · saved for everyone automatically · pick your own team in the "My team" bar on the Icons/Text/Map tabs'}</div>
             </div>`;
 
         const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
@@ -1818,7 +1831,7 @@
         list:  { icon: 'fa-icons',       th: 'ไอคอน',          en: 'Icons' },
         text:  { icon: 'fa-font',        th: 'ตัวหนังสือ',     en: 'Text' },
         map:   { icon: 'fa-map',         th: 'แผนที่',         en: 'Map' },
-        team:  { icon: 'fa-users', th: 'ทีม',          en: 'Teams' },
+        team:  { icon: 'fa-users',       th: 'แบ่งทีม',        en: 'Teams' },
         settings: { icon: 'fa-gear',     th: 'ตั้งค่า',        en: 'Settings' }
     };
     let mapW = 1, mapS = 1;
