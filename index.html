@@ -94,14 +94,15 @@
 
     <div class="flex-1 px-3 py-3 flex flex-col gap-3 overflow-y-auto relative pb-20">
 
-        <!-- 🔀 สลับมุมมอง: แบบไอคอน / ตัวหนังสือ / แผนที่ / ตั้งค่า -->
+        <!-- 🔀 สลับมุมมอง: ไอคอน / ตัวหนังสือ / แผนที่ / ทีม / ตั้งค่า -->
         <!-- ตรึงไว้ด้านบนตอนเลื่อน: กรอบนอกสีพื้นแอป ตรึงที่ -12px (= padding ของกล่องเลื่อน) ปิดช่องเหนือแถบ ไม่ให้เห็นเนื้อหาเลื่อนผ่าน -->
         <div id="view-toggle" class="hidden sticky -top-3 z-30 -mt-3 pt-3 flex-shrink-0 bg-[#F4F4F5] dark:bg-[#0F172A] transition-colors">
-            <div class="grid grid-cols-4 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
+            <div class="grid grid-cols-5 gap-1 p-1 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors">
                 <!-- ชื่อแท็บใส่จาก JS ตามภาษา (VIEW_TABS) -->
                 <button id="view-btn-list" onclick="setViewMode('list')"></button>
                 <button id="view-btn-text" onclick="setViewMode('text')"></button>
                 <button id="view-btn-map" onclick="setViewMode('map')"></button>
+                <button id="view-btn-team" onclick="setViewMode('team')"></button>
                 <button id="view-btn-settings" onclick="setViewMode('settings')"></button>
             </div>
         </div>
@@ -190,6 +191,7 @@
 
         <!-- 🔤 มุมมองตัวหนังสือล้วน (TH / EN) -->
         <div id="text-container" class="hidden flex flex-col gap-2.5 pb-2"></div>
+        <div id="team-container" class="hidden flex flex-col gap-2.5 pb-2"></div>
 
         <div id="waves-container" class="flex flex-col gap-2.5 pb-2">
             <!-- โหลดจาก JS -->
@@ -870,8 +872,8 @@
         let langCode = 'en-US';
 
         if (speechLang === 'TH') {
-            const spokenPointsTh = pts.map(item => {
-                if (!item) return "";
+            const spokenPointsTh = pts.map((item, idx) => {
+                if (!item || isOtherTeam(w, s, idx)) return "";
                 const p = parsePt(item);
                 // คำย่อต่อท้ายด้วยฝั่ง เช่น "โรงซ้าย" (ไม่มีขีด) · สีออร่าพูดทีละสี
                 let thName = shortName(curM, p.loc, 'th').replace(/-/g, '');
@@ -884,8 +886,8 @@
             spokenText = `เวฟที่ ${w} จุด ${s}: ${spokenPointsTh.join(", ")}`;
             langCode = 'th-TH';
         } else {
-            const spokenPointsEn = pts.map(item => {
-                if (!item) return "";
+            const spokenPointsEn = pts.map((item, idx) => {
+                if (!item || isOtherTeam(w, s, idx)) return "";
                 const p = parsePt(item);
                 let loc = p.side ? `${p.loc} ${sideName(curM, p.loc, p.side, 'en')}` : p.loc;
                 let color = p.colors.join(' ');
@@ -1032,6 +1034,7 @@
 
         if (latest.isCurrentWeek) {
             gData.spawnData = latest.spawnData;
+            gData.teamData = latest.teamData || {};
             mapDate = latest.mapDate || mapDate;
             gData.isNewWeek = false;
             gData.isMapSet = !!latest.isMapSet;
@@ -1046,6 +1049,7 @@
             }
         } else {
             gData.isNewWeek = true;
+            gData.teamData = {};
             gData.isMapSet = false;
             gData.hasWaveData = false;
             gData.canChangeMap = true;
@@ -1082,7 +1086,7 @@
         editingW = w;
         editingS = s;
         // สถานะ ✓ ของรอบก่อนไม่ต้องโชว์ (จุดที่ยังค้างส่ง/ผิดพลาดเก็บไว้)
-        for (const k in ptState) if (k.startsWith(`${w}.${s}.`) && !ptBusy(ptState[k])) delete ptState[k];
+        for (const k in ptState) if (k.startsWith(`spawn.${w}.${s}.`) && !ptBusy(ptState[k])) delete ptState[k];
         tempPts = [];
         syncEditFromServer();
 
@@ -1099,10 +1103,13 @@
     }
 
     // 📍 ผู้เล่นทั่วไป: บันทึกทีละจุด หลังหยุดกด PT_DELAY · ค่าเท่าบันทึกล่าสุด = ไม่ส่ง
+    // kind: spawn = จุดเกิด (แถว 16) · team = ทีม A/B (แถว 17)
     const PT_DELAY = 1500;
-    const ptState = {};   // "w.s.i" → { value, ver, timer, status: wait | saving | saved | error }
-    const ptKey = (w, s, i) => `${w}.${s}.${i}`;
+    const ptState = {};   // "kind.w.s.i" → { kind, w, s, i, value, ver, timer, status: wait | saving | saved | error }
+    const ptKey = (w, s, i, kind = 'spawn') => `${kind}.${w}.${s}.${i}`;
     const ptBusy = st => !!st && ['wait', 'saving', 'error'].includes(st.status);
+    const PT_KIND = { spawn: ['saveSpawnPoint', 'spawnData'], team: ['saveTeamPoint', 'teamData'] };
+    const savedOf = (kind, w, s, i) => (((gData[PT_KIND[kind][1]] || {})[w] || {})[s] || [])[i] || "";
     const PT_STATUS = {
         wait:   ['fa-clock text-gray-400', 'รอบันทึก', 'Pending'],
         saving: ['fa-circle-notch fa-spin text-indigo-500', 'กำลังบันทึก', 'Saving'],
@@ -1113,45 +1120,47 @@
     // ค่าในหน้าต่าง = บันทึกล่าสุด ยกเว้นจุดที่ผู้เล่นแก้อยู่
     function syncEditFromServer() {
         if (editingW === null) return;
-        const server = gData.spawnData[editingW][editingS] || [];
         for (let i = 0; i < (editingW === 4 ? 4 : 3); i++) {
             const st = ptState[ptKey(editingW, editingS, i)];
-            tempPts[i] = ptBusy(st) ? st.value : (server[i] || "");
+            tempPts[i] = ptBusy(st) ? st.value : savedOf('spawn', editingW, editingS, i);
         }
         renderEditModal();
+    }
+
+    function queuePoint(kind, w, s, i, value) {
+        const k = ptKey(w, s, i, kind);
+        const st = ptState[k] || (ptState[k] = { kind, w, s, i, ver: 0 });
+        clearTimeout(st.timer);
+        Object.assign(st, { value, ver: st.ver + 1, status: 'wait', timer: setTimeout(() => savePoint(k), PT_DELAY) });
     }
 
     function setPoint(i, value) {
         tempPts[i] = value;
-        if (!isAdmin) {
-            const w = editingW, s = editingS, k = ptKey(w, s, i);
-            const st = ptState[k] || (ptState[k] = { ver: 0 });
-            clearTimeout(st.timer);
-            Object.assign(st, { value, ver: st.ver + 1, status: 'wait', timer: setTimeout(() => savePoint(w, s, i), PT_DELAY) });
-        }
+        if (!isAdmin) queuePoint('spawn', editingW, editingS, i, value);
         renderEditModal();
     }
 
-    async function savePoint(w, s, i) {
-        const st = ptState[ptKey(w, s, i)];
+    async function savePoint(k) {
+        const st = ptState[k];
         if (!st) return;
         clearTimeout(st.timer);
         st.timer = null;
-        const ver = st.ver;
-        const isOpen = () => editingW === w && editingS === s;
+        const { kind, w, s, i } = st, ver = st.ver;
+        const isOpen = () => kind === 'spawn' && editingW === w && editingS === s;
+        const refresh = () => kind === 'team' ? render() : (isOpen() && renderEditModal());
 
-        if (st.value === ((gData.spawnData[w][s] || [])[i] || "")) {
+        if (st.value === savedOf(kind, w, s, i)) {
             st.status = '';
-            if (isOpen()) renderEditModal();
+            refresh();
             return;
         }
 
         st.status = 'saving';
-        if (isOpen()) renderEditModal();
+        refresh();
         const mapNameEn = gData.mapsData[curM] ? gData.mapsData[curM].name.en : curM;
         let res;
         try {
-            res = await apiCall('saveSpawnPoint', w, s, i, st.value, mapNameEn);
+            res = await apiCall(PT_KIND[kind][0], w, s, i, st.value, mapNameEn);
         } catch (e) {
             res = { status: 'error', message: e.toString() };
         }
@@ -1175,8 +1184,8 @@
         }
 
         if (st.ver === ver) st.status = 'error';
-        if (isOpen()) renderEditModal();
-        else showToast(`Wave ${w}.${s} #${i + 1}: ${res.message || 'Save failed (บันทึกไม่สำเร็จ)'}`, 'error');
+        refresh();
+        if (!isOpen()) showToast(`Wave ${w}.${s} #${i + 1}: ${res.message || 'Save failed (บันทึกไม่สำเร็จ)'}`, 'error');
     }
 
     // เผื่อโค้ดเก่าเรียกใช้ชื่อเดิม
@@ -1219,7 +1228,7 @@
             const stInfo = st && PT_STATUS[st.status];
             const stText = stInfo ? `<i class="fa-solid ${stInfo[0]}"></i> ${stInfo[uiLang() === 'th' ? 1 : 2]}` : '';
             const stHtml = !stInfo ? '' : st.status === 'error'
-                ? `<button onclick="savePoint(${editingW}, ${editingS}, ${i})" class="text-[10px] font-bold text-rose-500 normal-case tracking-normal">${stText}</button>`
+                ? `<button onclick="savePoint('${ptKey(editingW, editingS, i)}')" class="text-[10px] font-bold text-rose-500 normal-case tracking-normal">${stText}</button>`
                 : `<span class="text-[10px] font-medium text-gray-400 normal-case tracking-normal">${stText}</span>`;
             row.innerHTML = `<div class="flex items-center justify-between gap-2 text-[10px] font-bold text-gray-400 dark:text-gray-300 mb-1.5 uppercase tracking-wide px-1"><span>Spawn Point ${i+1} <span class="font-normal opacity-70">(จุดเกิดที่ ${i+1})</span></span>${stHtml}</div>`;
             const grid = document.createElement('div');
@@ -1321,7 +1330,7 @@
         editingW = null;
         editingS = null;
         // ปิดก่อนครบเวลา = ส่งจุดที่ค้างทันที
-        for (const k in ptState) if (ptState[k].timer) savePoint(...k.split('.').map(Number));
+        for (const k in ptState) if (ptState[k].timer && ptState[k].kind === 'spawn') savePoint(k);
     }
     
     function confirmEdit() {
@@ -1511,6 +1520,8 @@
                 
                 for(let idx=0; idx<limit; idx++) {
                     const rawItem = d[w][s] ? d[w][s][idx] : null;
+                    // 👥 ป้ายทีมมุมซ้ายบน · จุดของอีกทีมจาง (เฉพาะเมื่อเลือกทีมของฉัน)
+                    html += `<div class="relative ${teamDimCls(w, s, idx)}">${teamBadge(w, s, idx, 'absolute -top-1.5 -left-1.5 z-10 shadow-sm')}`;
                     if (rawItem) {
                         // 🌟 แยกส่วนประกอบเวลาวาดหน้าจอ
                         const pt = parsePt(rawItem);
@@ -1550,6 +1561,7 @@
                     } else {
                         html += `<span class="text-sm font-bold text-gray-200 dark:text-slate-700 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-full w-8 h-8 flex items-center justify-center">${isAdmin ? '+' : '?'}</span>`;
                     }
+                    html += `</div>`;
                 }
                 
                 html += `</div>`;
@@ -1584,6 +1596,7 @@
         con.classList.toggle('hidden', mode !== 'list');
         renderMapView(mode === 'map');
         renderTextView(mode === 'text');
+        renderTeamView(mode === 'team');
     }
 
     // 🔤 ชื่อไทย [คำย่อ, คำเต็ม] — คำย่อใช้แสดงผล (แท็บตัวหนังสือ / แผนที่ / คำแนะนำ)
@@ -1631,6 +1644,82 @@
         return activeSubW === w ? 'shadow-md' : 'opacity-40';
     }
 
+    // 👥 ทีม A/B ต่อจุด (แชร์ทุกคน) · "ทีมของฉัน" จำในเครื่อง: เลือกแล้ว จุดของอีกทีมจาง + เสียงพูดเฉพาะทีมเรา
+    let myTeam = ['A', 'B'].includes(localStorage.getItem('got_team')) ? localStorage.getItem('got_team') : '';
+    const TEAM_CLS = { A: 'bg-sky-500 text-white', B: 'bg-fuchsia-500 text-white' };
+    const NEXT_TEAM = { '': 'A', A: 'B', B: '' };
+
+    function teamOf(w, s, i) {
+        const st = ptState[ptKey(w, s, i, 'team')];
+        return ptBusy(st) ? st.value : savedOf('team', w, s, i);
+    }
+    const isOtherTeam = (w, s, i) => { const t = myTeam && teamOf(w, s, i); return !!t && t !== myTeam; };
+    const teamDimCls = (w, s, i) => isOtherTeam(w, s, i) ? 'opacity-25' : '';
+    function teamBadge(w, s, i, extra = '') {
+        const t = myTeam && teamOf(w, s, i);
+        return t ? `<span class="inline-flex items-center justify-center w-4 h-4 rounded-md text-[10px] font-black leading-none ${TEAM_CLS[t]} ${extra}">${t}</span>` : '';
+    }
+
+    function setMyTeam(t) {
+        myTeam = t;
+        localStorage.setItem('got_team', t);
+        render();
+    }
+
+    function cycleTeam(w, s, i) {
+        if (!gData.isMapSet) { openMapPicker(true); return; }
+        queuePoint('team', w, s, i, NEXT_TEAM[teamOf(w, s, i)]);
+        render();
+    }
+
+    function renderTeamView(isTeamView) {
+        const box = document.getElementById('team-container');
+        box.classList.toggle('hidden', !isTeamView);
+        if (!isTeamView) return;
+
+        const lang = uiLang();
+        const pick = [['', 'ไม่แสดง', 'Off'], ['A', 'ทีม A', 'Team A'], ['B', 'ทีม B', 'Team B']].map(([t, th, en]) => `
+            <button onclick="setMyTeam('${t}')" class="py-2 rounded-xl text-xs font-black transition ${myTeam === t ? (t ? TEAM_CLS[t] : 'bg-slate-600 text-white') + ' shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'}">${lang === 'th' ? th : en}</button>`).join('');
+        let out = `
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-2 transition-colors">
+                <div class="text-xs font-black text-gray-800 dark:text-gray-100 px-1 mb-1.5">${lang === 'th' ? 'ทีมของฉัน' : 'My team'}</div>
+                <div class="grid grid-cols-3 gap-1 p-1 bg-gray-50 dark:bg-slate-900/60 rounded-xl">${pick}</div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 px-1 mt-2 leading-snug">${lang === 'th'
+                    ? 'แตะจุดเพื่อสลับ ว่าง → A → B · บันทึกให้ทุกคนอัตโนมัติ · เลือกทีมของฉันแล้ว จุดของอีกทีมจะจางลง และเสียงพูดเฉพาะทีมเรา'
+                    : "Tap a point to cycle none → A → B · saved for everyone automatically · with My team set, the other team's points fade and voice reads only yours"}</div>
+            </div>`;
+
+        const clrs = { 1:'blue', 2:'emerald', 3:'orange', 4:'rose' };
+        [1,2,3,4].forEach(w => {
+            out += `<div class="relative bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200/80 dark:border-slate-700 overflow-hidden px-2 py-1 transition-colors">
+                <div class="absolute -right-4 -top-8 text-[110px] font-black text-${clrs[w]}-500 opacity-10 dark:opacity-15 pointer-events-none select-none">W${w}</div>`;
+            [1,2,3].forEach(s => {
+                const limit = w === 4 ? 4 : 3;
+                const pts = (gData.spawnData[w] && gData.spawnData[w][s]) || [];
+                let cells = '';
+                for (let idx = 0; idx < limit; idx++) {
+                    const p = pts[idx] ? parsePt(pts[idx]) : null;
+                    const t = teamOf(w, s, idx);
+                    const st = ptState[ptKey(w, s, idx, 'team')];
+                    const stIcon = st && st.status !== 'saved' && PT_STATUS[st.status] ? `<i class="fa-solid ${PT_STATUS[st.status][0]} absolute top-0.5 right-0.5 text-[9px] ${t ? '!text-white' : ''}"></i>` : '';
+                    cells += `
+                        <button onclick="cycleTeam(${w}, ${s}, ${idx})" class="relative min-w-0 rounded-xl px-1 py-1.5 flex flex-col items-center gap-0.5 border-2 transition active:scale-95 ${t ? TEAM_CLS[t] + ' border-transparent shadow-sm' : 'border-dashed border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200'}">
+                            ${stIcon}
+                            <span class="text-sm font-black leading-none">${t || '–'}</span>
+                            <span class="w-full truncate text-center font-sans text-[11px] leading-tight ${t ? 'text-white/90' : 'text-gray-400'}">${p ? shortName(curM, p.loc, lang) + (p.side ? '-' + p.side : '') : (lang === 'th' ? 'จุด ' : '#') + (idx + 1)}</span>
+                        </button>`;
+                }
+                out += `
+                    <div class="relative flex items-center gap-1.5 py-2 px-1 border-b border-gray-100/60 dark:border-slate-700/60 last:border-0">
+                        <div class="w-9 flex-shrink-0 text-center font-black text-xs text-gray-300 dark:text-slate-600">${w}.${s}</div>
+                        <div class="flex-1 min-w-0 grid gap-1.5 ${limit === 4 ? 'grid-cols-4' : 'grid-cols-3'}">${cells}</div>
+                    </div>`;
+            });
+            out += `</div>`;
+        });
+        box.innerHTML = out;
+    }
+
     function renderTextView(isTextView) {
         const box = document.getElementById('text-container');
         box.classList.toggle('hidden', !isTextView);
@@ -1661,7 +1750,7 @@
                         if (ac) dots += `<span class="inline-block w-2.5 h-2.5 rounded-full ${ac.hexClass} ml-1 align-middle"></span>`;
                     });
                     cells += `
-                        <div class="min-w-0 leading-tight font-sans ${limit === 4 ? 'text-xs' : 'text-[13px]'} md:text-base font-normal text-gray-800 dark:text-gray-100">${p ? ptLabelHtml(p, uiLang()) + dots : '-'}</div>`;
+                        <div class="min-w-0 leading-tight font-sans ${limit === 4 ? 'text-xs' : 'text-[13px]'} md:text-base font-normal text-gray-800 dark:text-gray-100 ${teamDimCls(w, s, idx)}">${teamBadge(w, s, idx, 'mr-0.5 align-middle')}${p ? ptLabelHtml(p, uiLang()) + dots : '-'}</div>`;
                 }
 
                 out += `
@@ -1679,11 +1768,12 @@
     }
 
     // 🗺️ มุมมองแผนที่ (ดูอย่างเดียว) — เลือกเวฟจากแถบเลข แทนรายการเวฟแบบเดิม
-    let viewMode = ['map', 'text', 'settings'].includes(localStorage.getItem('got_view')) ? localStorage.getItem('got_view') : 'list';
+    let viewMode = ['map', 'text', 'team', 'settings'].includes(localStorage.getItem('got_view')) ? localStorage.getItem('got_view') : 'list';
     const VIEW_TABS = {
-        list:  { icon: 'fa-icons',       th: 'แบบไอคอน',      en: 'Icons' },
-        text:  { icon: 'fa-font',        th: 'แบบตัวหนังสือ', en: 'Text' },
+        list:  { icon: 'fa-icons',       th: 'ไอคอน',          en: 'Icons' },
+        text:  { icon: 'fa-font',        th: 'ตัวหนังสือ',     en: 'Text' },
         map:   { icon: 'fa-map',         th: 'แผนที่',         en: 'Map' },
+        team:  { icon: 'fa-people-group', th: 'ทีม',          en: 'Teams' },
         settings: { icon: 'fa-gear',     th: 'ตั้งค่า',        en: 'Settings' }
     };
     let mapW = 1, mapS = 1;
@@ -1721,7 +1811,7 @@
         }
         document.getElementById('map-wave-label').innerHTML = `<span>Wave <span class="text-indigo-400">${mapW}.${mapS}</span></span>${timerHtml}`;
         document.getElementById('map-wave-count').textContent = `${slots.filter(Boolean).length} / ${limit}`;
-        window.MapView.render(document.getElementById('map-svg'), curM, slots, loc => shortName(curM, loc, uiLang()));
+        window.MapView.render(document.getElementById('map-svg'), curM, slots, loc => shortName(curM, loc, uiLang()), idx => isOtherTeam(mapW, mapS, idx));
 
         // ตารางเลขเวฟ — จุดใต้เลข = ลำดับ 1..n (วงกลวง = ยังว่าง)
         const isAura = curM === 'hidden_temple';

@@ -102,6 +102,11 @@ function drawBadge(g, M, sp, segs, uid) {
   const colorsOf = s => (M.hasAura ? s.colors : []);
   const fillOf = cs => cs.length ? auraHex(cs[0]) : (M.hasAura ? "var(--spawn)" : "var(--accent)");
 
+  // ทั้งหมุดเป็นของอีกทีม = จางทั้งก้อน · ปนกัน = จางเฉพาะช่อง
+  const allDim = segs.every(s => s.dim);
+  const opOf = s => (s.dim && !allDim ? ".3" : "1");
+  if (allDim) g = g.appendChild(el("g", { opacity: ".3" }));
+
   g.appendChild(el("rect", {
     x: x0 - 6, y: y0 - 6, width: w + 12, height: H + 12, rx: rx + 6,
     fill: fillOf(colorsOf(segs[0])), "fill-opacity": ".28"
@@ -116,10 +121,10 @@ function drawBadge(g, M, sp, segs, uid) {
   segs.forEach((s, i) => {
     const sx = x0 + i * segW, cs = colorsOf(s);
     if (cs.length === 2) {
-      body.appendChild(el("rect", { x: sx, y: y0, width: segW, height: H / 2, fill: auraHex(cs[0]) }));
-      body.appendChild(el("rect", { x: sx, y: y0 + H / 2, width: segW, height: H / 2, fill: auraHex(cs[1]) }));
+      body.appendChild(el("rect", { x: sx, y: y0, width: segW, height: H / 2, fill: auraHex(cs[0]), opacity: opOf(s) }));
+      body.appendChild(el("rect", { x: sx, y: y0 + H / 2, width: segW, height: H / 2, fill: auraHex(cs[1]), opacity: opOf(s) }));
     } else {
-      body.appendChild(el("rect", { x: sx, y: y0, width: segW, height: H, fill: fillOf(cs) }));
+      body.appendChild(el("rect", { x: sx, y: y0, width: segW, height: H, fill: fillOf(cs), opacity: opOf(s) }));
     }
     if (i > 0) body.appendChild(el("line", { x1: sx, y1: y0, x2: sx, y2: y0 + H, stroke: "var(--panel)", "stroke-width": 2.5 }));
   });
@@ -129,7 +134,7 @@ function drawBadge(g, M, sp, segs, uid) {
   segs.forEach((s, i) => {
     const t = el("text", {
       x: x0 + i * segW + segW / 2, y: sp.y + 6.2, "text-anchor": "middle",
-      "font-size": 17, "font-weight": 800, fill: "#fff",
+      "font-size": 17, "font-weight": 800, fill: "#fff", opacity: opOf(s),
       stroke: "rgba(0,0,0,.45)", "stroke-width": 3, "paint-order": "stroke", "stroke-linejoin": "round"
     });
     t.textContent = s.n;
@@ -139,11 +144,11 @@ function drawBadge(g, M, sp, segs, uid) {
 
 /* slots = ["Cemetery@L:orange", "Pagoda", "", ...] — index = ลำดับ
    มีฝั่ง = หมุดที่จุดเกิด · ไม่มีฝั่ง (ข้อมูลเก่า / ยังไม่ระบุ) = หมุดกลางวงสถานที่ */
-function drawSpawns(g, M, slots) {
+function drawSpawns(g, M, slots, dimOf) {
   g.textContent = "";
   const segsOf = k => slots.reduce((acc, raw, i) => {
     const [head, c] = (raw || "").split(":");
-    return head === k ? [...acc, { n: i + 1, colors: c ? c.split(",").filter(Boolean) : [] }] : acc;
+    return head === k ? [...acc, { n: i + 1, colors: c ? c.split(",").filter(Boolean) : [], dim: dimOf(i) }] : acc;
   }, []);
 
   for (const locId in M.locs) {
@@ -166,8 +171,9 @@ function drawSpawns(g, M, slots) {
   }
 }
 
-/* วาดฉากใหม่เฉพาะตอนเปลี่ยนด่าน/ชื่อ · หมุดวาดใหม่ทุกครั้ง · labelOf(locId) = ชื่อที่แสดงบนแผนที่ */
-function render(svg, mapId, slots, labelOf = locId => locId) {
+/* วาดฉากใหม่เฉพาะตอนเปลี่ยนด่าน/ชื่อ · หมุดวาดใหม่ทุกครั้ง · labelOf(locId) = ชื่อที่แสดงบนแผนที่
+   dimOf(index) = true → หมุดลำดับนั้นจาง (จุดของอีกทีม) */
+function render(svg, mapId, slots, labelOf = locId => locId, dimOf = () => false) {
   const M = (window.MAPS || {})[mapId];
   if (!M) return false;
 
@@ -185,7 +191,7 @@ function render(svg, mapId, slots, labelOf = locId => locId) {
     svg.setAttribute("aria-label", "แผนที่ " + M.name.en);
     svg.dataset.map = cacheKey;
   }
-  drawSpawns(svg.querySelector(".mv-spawns"), M, slots || []);
+  drawSpawns(svg.querySelector(".mv-spawns"), M, slots || [], dimOf);
   return true;
 }
 

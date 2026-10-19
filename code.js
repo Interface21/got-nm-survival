@@ -19,6 +19,8 @@ function doPost(e) {
       result = saveWaveData(args[0], args[1], args[2], args[3]);
     } else if (action === 'saveSpawnPoint') {
       result = saveSpawnPoint(args[0], args[1], args[2], args[3], args[4]);
+    } else if (action === 'saveTeamPoint') {
+      result = saveTeamPoint(args[0], args[1], args[2], args[3], args[4]);
     } else if (action === 'getLatestSpawnData') {
       result = getLatestSpawnData();
     } else if (action === 'setWeeklyMap') {
@@ -144,6 +146,7 @@ function getWeeklyMapData() {
     const logRange = sheet.getRange("A16:N16");
     const logDisplays = logRange.getDisplayValues()[0];
     const logValues = logRange.getValues()[0];
+    let teamData = emptyWaves();
 
     const lastDateInDb = logDisplays[0] ? logDisplays[0].trim() : "";
     
@@ -170,11 +173,13 @@ function getWeeklyMapData() {
           colIdx++;
         });
       });
+      teamData = readTeams(sheet);
     } else {
       // 🧹 สัปดาห์ใหม่! อัปเดตวันที่แถว 16 เป็นสัปดาห์ใหม่ และล้างจุดเกิดเก่าทิ้ง (รอผู้เล่นเลือกด่านใหม่)
       try {
         sheet.getRange("A16").setValue(currentWeekDate);
         sheet.getRange("B16:N16").clearContent();
+        sheet.getRange("C17:N17").clearContent();
       } catch(e) {}
     }
 
@@ -189,6 +194,7 @@ function getWeeklyMapData() {
       currentMapId: logMapId,
       mapNameEn: logMapName,
       spawnData,
+      teamData,
       mapsData,
       isNewWeek: !isDataMatchCurrentWeek,
       isMapSet,
@@ -225,6 +231,12 @@ function saveWeeklyMapData(mapId, mapNameEn, spawnData, pass) {
         rowData.push((spawnData[w][s] || []).join("|"));
       });
     });
+
+    // เปลี่ยนสัปดาห์/ด่าน = ทีมเดิมใช้ไม่ได้แล้ว
+    const old = sheet.getRange("A16:B16").getDisplayValues()[0];
+    if (old[0].trim() !== currentWeekDate || old[1].trim().toLowerCase() !== String(mapNameEn).trim().toLowerCase()) {
+      sheet.getRange("C17:N17").clearContent();
+    }
 
     // บันทึกทับในแถวที่ 16 โดยตรง
     sheet.getRange(16, 1, 1, 14).setValues([rowData]);
@@ -276,6 +288,7 @@ function getLatestSpawnData() {
       mapDate: rowDate,
       mapNameEn: isMapSet ? mapNameEn : "",
       spawnData,
+      teamData: isCurrentWeek ? readTeams(sheet) : emptyWaves(),
       isCurrentWeek,
       isMapSet,
       hasWaveData,
@@ -347,8 +360,31 @@ function saveWaveData(wave, subwave, pointsStr, mapNameEn) {
   }
 }
 
-// 📍 บันทึกทีละจุด: แก้เฉพาะจุดที่ index ในช่องของเวฟ (จุดอื่นที่คนอื่นบันทึกไว้ไม่ถูกทับ) · ค่าเท่าเดิมไม่เขียน
+// 👥 ทีม A/B ของแต่ละจุด เก็บที่แถว 17 (คอลัมน์เดียวกับแถว 16) · ล้างพร้อมจุดเกิด
+function emptyWaves() {
+  return { 1:{1:[],2:[],3:[]}, 2:{1:[],2:[],3:[]}, 3:{1:[],2:[],3:[]}, 4:{1:[],2:[],3:[]} };
+}
+
+function readTeams(sheet) {
+  const cells = sheet.getRange("C17:N17").getDisplayValues()[0];
+  const teams = emptyWaves();
+  [1,2,3,4].forEach(w => [1,2,3].forEach(s => {
+    teams[w][s] = splitPoints(cells[getSubWaveColIndex(w, s) - 3].toString().trim());
+  }));
+  return teams;
+}
+
 function saveSpawnPoint(wave, subwave, index, value, mapNameEn) {
+  return savePointInRow(16, wave, subwave, index, value, mapNameEn);
+}
+
+function saveTeamPoint(wave, subwave, index, team, mapNameEn) {
+  if (["", "A", "B"].indexOf(team || "") < 0) return { status: "error", message: "Invalid team." };
+  return savePointInRow(17, wave, subwave, index, team, mapNameEn);
+}
+
+// 📍 บันทึกทีละจุด: แก้เฉพาะจุดที่ index ในช่องของเวฟ (จุดอื่นที่คนอื่นบันทึกไว้ไม่ถูกทับ) · ค่าเท่าเดิมไม่เขียน
+function savePointInRow(row, wave, subwave, index, value, mapNameEn) {
   const lock = LockService.getScriptLock();
   try {
     if (!lock.tryLock(20000)) {
@@ -362,7 +398,7 @@ function saveSpawnPoint(wave, subwave, index, value, mapNameEn) {
     const i = parseInt(index, 10);
     if (!(i >= 0 && i < 4)) return { status: "error", message: "Invalid spawn point index." };
 
-    const cell = sheet.getRange(16, getSubWaveColIndex(wave, subwave));
+    const cell = sheet.getRange(row, getSubWaveColIndex(wave, subwave));
     const pts = splitPoints(cell.getDisplayValue().toString().trim());
     const v = value ? value.toString().trim() : "";
     if ((pts[i] || "") !== v) {
@@ -410,6 +446,7 @@ function setWeeklyMap(mapNameEn) {
     if (rowDate !== currentWeekDate) {
       // สัปดาห์ใหม่: ตั้งวันที่ + ด่าน แล้วล้างจุดเกิดเก่าทิ้ง
       sheet.getRange(16, 1, 1, 14).setValues([[currentWeekDate, newMapName, "", "", "", "", "", "", "", "", "", "", "", ""]]);
+      sheet.getRange("C17:N17").clearContent();
     } else if (!rowMapName) {
       sheet.getRange("B16").setValue(newMapName);
     } else if (rowMapName.toLowerCase() === newMapName.toLowerCase()) {
@@ -425,6 +462,7 @@ function setWeeklyMap(mapNameEn) {
       // ยังไม่มีใครบันทึก Wave เลย เปลี่ยนด่านได้
       sheet.getRange("B16").setValue(newMapName);
       sheet.getRange("C16:N16").clearContent();
+      sheet.getRange("C17:N17").clearContent();
     }
 
     SpreadsheetApp.flush();
