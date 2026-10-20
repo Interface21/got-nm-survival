@@ -381,6 +381,8 @@
         const [loc, side] = head.split('@');
         return { loc, side: side || "", colors: c ? c.split(',').filter(Boolean) : [] };
     }
+    // ข้อความจากข้อมูล (ชีท/ผู้เล่น) ก่อนใส่ innerHTML
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     function buildPt(p) {
         return p.loc + (p.side ? '@' + p.side : '') + (p.colors.length ? ':' + p.colors.join(',') : '');
     }
@@ -549,7 +551,7 @@
         if (!qrCreated) {
             new QRious({
                 element: document.getElementById('qr-canvas'),
-                value: WEB_APP_URL,
+                value: location.origin + location.pathname,   // หน้าแอป (WEB_APP_URL เป็นแค่ API)
                 size: 200,
                 level: 'H'
             });
@@ -926,8 +928,7 @@
             if (subWaveTimeRemaining <= 0) {
                 let nextW = activeSubW;
                 let nextS = activeSubS + 1;
-                const limit = nextW === 4 ? 4 : 3;
-                if (nextS > limit) {
+                if (nextS > 3) {
                     nextW = activeSubW < 4 ? activeSubW + 1 : 1;
                     nextS = 1;
                 }
@@ -1645,10 +1646,10 @@
     // ชื่อจุดเกิดเป็นตัวหนังสือ เช่น "โรง-ซ้าย" / "Foundry-L" (อังกฤษใช้ตัวอักษรฝั่ง ให้สั้นพอบนมือถือ)
     // ชื่อกับฝั่งแยก span ไม่ตัดกลางคำ · จอแคบตกบรรทัดตรงขีดเท่านั้น
     function ptLabelHtml(p, lang) {
-        const name = `<span class="whitespace-nowrap">${shortName(curM, p.loc, lang)}</span>`;
+        const name = `<span class="whitespace-nowrap">${esc(shortName(curM, p.loc, lang))}</span>`;
         if (!p.side) return name;
         const side = lang === 'th' ? sideName(curM, p.loc, p.side, 'th') : p.side;
-        return `${name}<wbr><span class="whitespace-nowrap text-indigo-500 dark:text-indigo-300">-${side}</span>`;
+        return `${name}<wbr><span class="whitespace-nowrap text-indigo-500 dark:text-indigo-300">-${esc(side)}</span>`;
     }
 
     // เวฟที่กำลังเล่น = การ์ดปกติ (ไม่มีกรอบ) · เวฟอื่นจางลง · ใช้ทั้งแบบไอคอนและตัวหนังสือ
@@ -1764,7 +1765,7 @@
                         <button onclick="cycleTeam(${w}, ${s}, ${idx})" class="relative min-w-0 rounded-xl px-1 py-1.5 flex flex-col items-center gap-0.5 border-2 transition active:scale-95 ${t ? TEAM_CLS[t] + ' border-transparent shadow-sm' : 'border-dashed border-gray-200 dark:border-slate-600 text-gray-700 dark:text-gray-200'}">
                             ${stIcon}
                             <span class="text-sm font-black leading-none">${t || '–'}</span>
-                            <span class="w-full truncate text-center font-sans text-[11px] leading-tight ${t ? 'text-white/90' : 'text-gray-400'}">${p ? shortName(curM, p.loc, lang) + (p.side ? '-' + (lang === 'th' ? sideName(curM, p.loc, p.side, 'th') : p.side) : '') : (lang === 'th' ? 'จุด ' : '#') + (idx + 1)}</span>
+                            <span class="w-full truncate text-center font-sans text-[11px] leading-tight ${t ? 'text-white/90' : 'text-gray-400'}">${p ? esc(shortName(curM, p.loc, lang) + (p.side ? '-' + (lang === 'th' ? sideName(curM, p.loc, p.side, 'th') : p.side) : '')) : (lang === 'th' ? 'จุด ' : '#') + (idx + 1)}</span>
                         </button>`;
                 }
                 out += `
