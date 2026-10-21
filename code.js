@@ -1,5 +1,11 @@
 function doGet(e) {
-  return ContentService.createTextOutput("API is running. Use POST for data requests.");
+  if (e && e.parameter && e.parameter.api) {
+    return ContentService.createTextOutput("API is running. Use POST for data requests.");
+  }
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('GOT : Nightmare Survival')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
 }
 
 function doPost(e) {
