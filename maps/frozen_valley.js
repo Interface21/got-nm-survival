@@ -25,7 +25,7 @@ window.MAPS.frozen_valley = {
       x: 96, y: 122,
       spawns: [
         { id: "L", x: 153, y: 28, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 18, y: 100, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 18, y: 100, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 22, y: 190, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -34,7 +34,7 @@ window.MAPS.frozen_valley = {
       x: 300, y: 100,
       spawns: [
         { id: "L", x: 394, y: 150,  name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 372, y: 30,  name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 372, y: 30,  name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 228, y: 40, name: { th: "ขวา",   en: "Right" } }
       ]
     },

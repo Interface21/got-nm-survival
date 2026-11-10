@@ -25,7 +25,7 @@ window.MAPS.river_village = {
       x: 98, y: 170,
       spawns: [
         { id: "L", x: 40, y: 262, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 18, y: 180, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 18, y: 180, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 30, y: 100, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -34,7 +34,7 @@ window.MAPS.river_village = {
       x: 305, y: 84,
       spawns: [
         { id: "L", x: 392, y: 156,  name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 360, y: 28,  name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 360, y: 28,  name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 250, y: 24, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -43,7 +43,7 @@ window.MAPS.river_village = {
       x: 288, y: 262,
       spawns: [
         { id: "L", x: 385, y: 286, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 310, y: 330, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 310, y: 330, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 230, y: 328, name: { th: "ขวา",   en: "Right" } }
       ]
     }

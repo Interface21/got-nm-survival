@@ -23,7 +23,7 @@ window.MAPS.broken_castle = {
       x: 200, y: 110,
       spawns: [
         { id: "L", x: 272, y: 24, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 200, y: 14, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 200, y: 14, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 130, y: 22, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -32,7 +32,7 @@ window.MAPS.broken_castle = {
       x: 95, y: 238,
       spawns: [
         { id: "L", x: 70, y: 322, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 22, y: 260, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 22, y: 260, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 20, y: 170, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -41,7 +41,7 @@ window.MAPS.broken_castle = {
       x: 302, y: 238,
       spawns: [
         { id: "L", x: 380, y: 170, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 382, y: 262, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 382, y: 262, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 330, y: 322, name: { th: "ขวา",   en: "Right" } }
       ]
     }

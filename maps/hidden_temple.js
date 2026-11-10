@@ -24,7 +24,7 @@ window.MAPS.hidden_temple = {
       x: 126, y: 90,
       spawns: [
         { id: "L", x: 126,  y: 18, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 58,  y: 32, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 58,  y: 32, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 33, y: 80, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -33,7 +33,7 @@ window.MAPS.hidden_temple = {
       x: 300, y: 152,
       spawns: [
         { id: "L", x: 386, y: 204,  name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 378, y: 128, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 378, y: 128, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 332, y: 82, name: { th: "ขวา",   en: "Right" } }
       ]
     },
@@ -42,7 +42,7 @@ window.MAPS.hidden_temple = {
       x: 118, y: 244,
       spawns: [
         { id: "L", x: 118,  y: 318, name: { th: "ซ้าย",  en: "Left" } },
-        { id: "C", x: 48,  y: 288, name: { th: "กลาง", en: "Center" } },
+        { id: "M", x: 48,  y: 288, name: { th: "กลาง", en: "Middle" } },
         { id: "R", x: 37, y: 225, name: { th: "ขวา",   en: "Right" } }
       ]
     }

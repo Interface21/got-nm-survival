@@ -148,7 +148,9 @@ function drawSpawns(g, M, slots, dimOf) {
   g.textContent = "";
   const segsOf = k => slots.reduce((acc, raw, i) => {
     const [head, c] = (raw || "").split(":");
-    return head === k ? [...acc, { n: i + 1, colors: c ? c.split(",").filter(Boolean) : [], dim: dimOf(i) }] : acc;
+    const normHead = head.replace(/@C\b/, '@M');
+    const normK = k.replace(/@C\b/, '@M');
+    return normHead === normK ? [...acc, { n: i + 1, colors: c ? c.split(",").filter(Boolean) : [], dim: dimOf(i) }] : acc;
   }, []);
 
   for (const locId in M.locs) {
